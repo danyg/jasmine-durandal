@@ -1,0 +1,28 @@
+<!--
+
+ @overview 
+ @author Daniel Goberitz <dalgo86@gmail.com>
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Javascript Tests</title>
+
+		<script type="text/javascript">
+			window.nwgui = require('nw.gui');
+			window.requireNode = window.require;
+			require.nodeRequire = window.requireNode;
+			window.require = undefined;
+			
+			window.nwgui.Window.get().showDevTools();
+		</script>
+        <link  href="tests/lib/jasmine.css" rel="stylesheet">
+        <script src="tests/lib/jasmine-1.3.1/jasmine.js"></script>
+        <script src="tests/lib/jasmine-1.3.1/jasmine-html.js"></script>
+        <script src="node_modules/requirejs/require.js" data-main="tests/js/specRunner"></script>
+
+    </head>
+	<body>
+	</body>
+</html>

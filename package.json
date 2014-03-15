@@ -1,0 +1,31 @@
+{
+	"name": "durandal-jasmine",
+	"description": "A utility to test durandal modules and widget in a unit way",
+	"version": "0.0.1",
+	"main": "index.html",
+	"window": {
+		"icon": "jasmine_icon.png",
+		"toolbar": true,
+		"width": 1024,
+		"height": 768,
+		"frame": true,
+		"resizable": true
+	},
+	"webkit": {
+		"plugin": false
+	},
+	"chromium-args": "--enable-threaded-compositing",
+	"dependencies": {
+	},
+	"devDependencies": {
+		"nodewebkit": "~0.8.4",
+		"requirejs": "~2.1.10"
+	},
+	"scripts": {
+		"test": "nodewebkit"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/danyg/durandal-jasmine.git"
+	}
+}
