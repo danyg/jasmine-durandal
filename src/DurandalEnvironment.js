@@ -10,8 +10,9 @@ define([
 	'durandal/system',
 	'durandal/app',
 	'durandal/events',
+	'durandal/composition',
 	'jquery'
-], function(SpyStub, system, app, Events, $){
+], function(SpyStub, system, app, Events, composition, $){
 
 	'use strict';
 	function DurandalEnvironment(moduleId){
@@ -23,22 +24,20 @@ define([
 		this.on('ERROR', this.destroy.bind(this));
 
 		this._plugins = {};
-		this._listenCompositionComplete();
 	}
 
 	Events.includeIn(DurandalEnvironment.prototype);
 
 	DurandalEnvironment.prototype.init = function(){
 		var me = this;
-		system.debug(true);
-
-		this._stub(system, 'log', function(log){
-			if(log.indexOf('Unable to process binding') !== -1){
-				me.trigger('ERROR', log);
-			}
-		});
-
 		return system.defer(function(defer){
+			system.debug(true);
+			me._stub(system, 'log', function(log){
+				if(log.indexOf('Unable to process binding') !== -1){
+					me.trigger('ERROR', log);
+				}
+			});
+			me._spyModule();
 			me.on('compositionComplete').then(defer.resolve);
 			me.on('ERROR').then(defer.reject);
 
@@ -53,6 +52,10 @@ define([
 
 	DurandalEnvironment.prototype.$ = function(selector){
 		return $(selector, this._moduleIdElement);
+	};
+
+	DurandalEnvironment.prototype.getModule = function(){
+		return this._testModule;
 	};
 
 	DurandalEnvironment.prototype.destroy = function(){
@@ -86,10 +89,11 @@ define([
 		this._toRestore.push(spy);
 	};
 
-	DurandalEnvironment.prototype._listenCompositionComplete = function(){
+	DurandalEnvironment.prototype._spyModule = function(){
 		var me = this;
 		system.acquire(this._moduleId)
 			.done(function(module){
+				me._storeModule(module);
 				me._spyCompositionComplete(module);
 			})
 			.fail(function(err){
@@ -98,8 +102,22 @@ define([
 		;
 	};
 
-	DurandalEnvironment.prototype._spyCompositionComplete = function(module){
+	DurandalEnvironment.prototype._storeModule = function(module){
+		var me = this;
 		this._module = module;
+
+		if(typeof module !== 'function'){
+			this._testModule = module;
+		}else{
+			var orig = composition.bindAndShow;
+			this._stub(composition, 'bindAndShow', function(child, context, skipActivation){
+				me._testModule = context.model;
+				return orig.apply(this, arguments);
+			});
+		}
+	};
+
+	DurandalEnvironment.prototype._spyCompositionComplete = function(module){
 		var me = this,
 			target = this._module
 		;

@@ -15,7 +15,7 @@ define([
 ], function(Testee, app, viewLocator, Events, okModule, errorModule){
 	window.DEBUG = true;
 
-	describe('Testee', function(){
+	describe('DurandalEnvironment', function(){
 
 		it('Has a Public API', function(){
 			expect(typeof Testee).toBe('function');
@@ -50,13 +50,12 @@ define([
 					expect(okModule.prototype.compositionComplete).toBeUndefined();
 
 					denv = new Testee('viewmodels/welcome');
+					expect(okModule.prototype.compositionComplete).toBeUndefined();
 				});
 				
 				waits(100);
 				
 				runs(function(){
-					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by DurandalEnvironment
-
 					denv.configurePlugins({
 						router:true,
 						dialog: true,
@@ -64,6 +63,7 @@ define([
 					});
 					viewLocator.useConvention();
 					var prom = denv.init();
+					
 					
 					expect(prom).toBeDefined();
 					expect(typeof prom.then).toBe('function');
@@ -86,6 +86,8 @@ define([
 				}, 1000);
 
 				runs(function(){
+					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by DurandalEnvironment
+
 					expect(app.setRoot.calledOnce).toBe(true);
 					expect($('body >.DurandalEnvironment')).toBeInDOM();
 					

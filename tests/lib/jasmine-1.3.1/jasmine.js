@@ -2517,6 +2517,7 @@ jasmine.Suite.prototype.children = function() {
 };
 
 jasmine.Suite.prototype.execute = function(onComplete) {
+console.log('suite starting', this);
   var self = this;
   this.queue.start(function () {
     self.finish(onComplete);
