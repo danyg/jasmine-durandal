@@ -44,9 +44,49 @@ define([
 			expect(durandal.getModule() instanceof Welcome).toBe(true);
 		});
 		
-		it('the instance of the viewmodel is available on the beforeEach', function(){
+		it('the instance of the viewmodel is available on the durandal.beforeStart', function(){
 			expect(module).toBe(durandal.getModule());
 			expect(module instanceof Welcome).toBe(true);
+			expect(module._test).toBeUndefined();
+			module._test = '1';
+		});
+		
+		describe('You can use neested describes', function(){
+			it('the instance of the viewmodel is available on the durandal.beforeStart inside of a describe', function(){
+				expect(module).toBe(durandal.getModule());
+				expect(module instanceof Welcome).toBe(true);
+
+				expect(module._test).toBeUndefined();
+				module._test = '1';
+			});
+			
+			it('the instance of the viewmodel is available on the durandal.beforeStart inside of a describe', function(){
+				expect(module).toBe(durandal.getModule());
+				expect(module instanceof Welcome).toBe(true);
+				
+				expect(module._test).toBeUndefined();
+				module._test = '1';
+			});
+			
+			describe('You can use neested describes', function(){
+				it('the instance of the viewmodel is available on the durandal.beforeStart inside of a describe', function(){
+					expect(module).toBe(durandal.getModule());
+					expect(module instanceof Welcome).toBe(true);
+
+					expect(module._test).toBeUndefined();
+					module._test = '1';
+				});
+
+				it('the instance of the viewmodel is available on the durandal.beforeStart inside of a describe', function(){
+					expect(module).toBe(durandal.getModule());
+					expect(module instanceof Welcome).toBe(true);
+
+					expect(module._test).toBeUndefined();
+					module._test = '1';
+				});
+
+			});
+			
 		});
 		
 	});
