@@ -21,11 +21,21 @@
 		"requirejs": true,
 		"define": true,
 		"$": true,
+		
 		"jasmine": true,
 		"describe": true,
 		"xdescribe": true,
 		"it": true,
 		"xit": true,
-		"expect": true
+		"expect": true,
+		"beforeEach": true,
+		"afterEach": true,
+		"runs": true,
+		"waits": true,
+		"waitsFor": true,
+		
+		"describeModule": true,
+
+		"sinon": true
 	}
 }

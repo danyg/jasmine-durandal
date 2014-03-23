@@ -14,7 +14,7 @@ define([
 	'viewmodels/welcome',
 	'viewmodels/error'
 ], function(Testee, DurandalEnvironment, app, viewLocator, Events, okModule, errorModule){
-	window.DEBUG = true;
+	'use strict';
 
 	xdescribe('WidgetEnvironment', function(){
 
@@ -114,11 +114,11 @@ define([
 
 			it('error lifecycle', function(){
 				var error = false,
+					started = false,
 					denv
 				;
 				runs(function(){
-					expect(typeof okModule).toBe('function');
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
+					expect(typeof errorModule).toBe('function');
 	
 					denv = new Testee('viewmodels/error');
 					denv.configurePlugins({
@@ -127,9 +127,8 @@ define([
 						widget: true
 					});
 					viewLocator.useConvention();
-					var prom = denv.init()
+					denv.init()
 						.done(function(){
-							console.log(' ERROR STARTED ');
 							started = true;
 						})
 						.fail(function(err){
@@ -139,7 +138,7 @@ define([
 				});
 				
 				waitsFor(function(){
-					return !!error;
+					return !!error || !!started;
 				}, 1000);
 				
 				runs(function(){

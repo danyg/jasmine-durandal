@@ -1,8 +1,8 @@
-/* 
- * 
- *  @overview 
+/*
+ *
+ *  @overview
  *  @author Daniel Goberitz <dalgo86@gmail.com>
- * 
+ *
  */
 
 define(['./DurandalEnvironment'], function(DurandalEnvironment) {
@@ -19,11 +19,9 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 		try {
 			this.func.apply(this.spec)
 				.done(function(){
-					console.log('Lo Que Sea Complete');
 					onComplete();
 				})
 				.fail(function(e){
-					console.log('Lo Que Sea Failed', arguments);
 					self.spec.fail(e);
 					onComplete();
 				})
@@ -38,18 +36,16 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 	window.xdescribeModule = function(description){
 		xdescribe(description);
 	};
-	
+
 	function createSuiteOnExecute(suite, durandal){
 		var oldExecute = suite.execute;
 		return function(){
-			var i, spec, self = this;
+			var i, spec;
 
 			var initDurEnv = function(){
-				console.log('%cINIT', 'background: #000; color: #f00;');
 				return durandal.init();
 			};
 			var endDurEnv = function(){
-				console.log('%cDESTROY', 'background: #000; color: #f00;');
 				return durandal.destroy();
 			};
 
@@ -65,16 +61,12 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 			}
 			return oldExecute.apply(this, arguments);
 		};
-	};
+	}
 
 	window.describeModule = function(description, moduleId, specDefinitions) {
 		var suite = jasmine.getEnv().describe(description, function() {
-			var self = this;
 			this.durandal = new DurandalEnvironment(moduleId);
-
-
 			this.execute = createSuiteOnExecute(this, this.durandal);
-
 			specDefinitions.call(this);
 		});
 

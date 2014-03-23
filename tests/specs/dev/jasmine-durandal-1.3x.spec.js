@@ -10,7 +10,9 @@ define([
 	'durandal/viewLocator',
 	'src/jasmine-durandal-1.3x'
 ], function(DurandalEnvironment, Welcome, viewLocator){
-	
+
+	'use strict';
+
 	describeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
 		var suite = this,
 			durandal = this.durandal,

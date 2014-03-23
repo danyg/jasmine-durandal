@@ -24,16 +24,16 @@ define([
 		this._toRestore = [];
 
 		this.on('ERROR', this.destroy.bind(this));
-		
+
 		var me = this;
-		/*viewEngine.createFallbackView = function(viewId, requirePath, err){
+		viewEngine.createFallbackView = function(viewId, requirePath, err){
 			return system.defer(function(defer){
 				var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
 				defer.reject(message);
-				console.error(err);
-				me.trigger('ERROR', message);			
+				me.trigger('ERROR', message);
+				throw err;
 			}).promise();
-		};*/
+		};
 
 		this._plugins = {};
 	}
@@ -48,9 +48,6 @@ define([
 			me.trigger('beforeStart');
 			setTimeout(function(){
 				system.debug(true);
-				me._stub(system, 'log', function(log){
-					console.log('DURANDAL SAY:', log);
-				});
 				me._stub(system, 'error', function(log){
 					me.trigger('ERROR', log.message);
 				});
@@ -88,26 +85,22 @@ define([
 				}
 
 				$(me._container).remove();
-				console.log(me._container);
 				var containerOnDom = true;
-				var i = 0;
 				while(containerOnDom){
-					i++;
 					containerOnDom = !!me._container.parentNode;
 				}
-				console.log('whiles', i);
 				defer.resolve();
 			}catch(e){
 				defer.reject(e);
 			}
-		
+
 		}).promise();
 	};
-	
+
 	DurandalEnvironment.prototype.beforeStart = function(cbk){
 		this.on('beforeStart', cbk);
 	};
-	
+
 	DurandalEnvironment.prototype.afterStart = function(cbk){
 		this.on('afterStart', cbk);
 	};
@@ -153,14 +146,14 @@ define([
 			this._testModule = module;
 		}else{
 			var orig = composition.bindAndShow;
-			this._stub(composition, 'bindAndShow', function(child, context, skipActivation){
+			this._stub(composition, 'bindAndShow', function(child, context){
 				me._testModule = context.model;
 				return orig.apply(this, arguments);
 			});
 		}
 	};
 
-	DurandalEnvironment.prototype._spyCompositionComplete = function(module){
+	DurandalEnvironment.prototype._spyCompositionComplete = function(){
 		var me = this,
 			target = this._module
 		;
@@ -170,7 +163,6 @@ define([
 		}
 
 		this._spy(target, 'compositionComplete', function(promise){
-			console.log('compositionComplete/////');
 			if(!!promise && !!promise.then){
 				promise.then(function(){
 					me.trigger('afterStart');
@@ -221,7 +213,7 @@ define([
 		if(this._plugins){
 			app.configurePlugins(this._plugins);
 		}
-		
+
 		binder.throwOnErrors = true;
 		app.start().then(function(){
 			app.setRoot(me._moduleId, undefined, me._id);
