@@ -215,7 +215,7 @@ module.exports = function( grunt ) {
 	]);
 
 	grunt.registerTask('tdd', [
-		'jshint',
+//		'jshint',
 		'exec:bower',
 		'connect:dev:livereload',
 		'jasmine:tdd:build',

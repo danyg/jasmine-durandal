@@ -21,14 +21,8 @@ define([
 		it('Has a Public API', function(){
 			expect(typeof Testee.prototype.newInstance).toBe('function');
 			expect(typeof Testee.prototype.getCurrentInstance).toBe('function');
-
-			// Inherited
-			expect(typeof Testee).toBe('function');
-			expect(typeof Testee.prototype.init).toBe('function');
-			expect(typeof Testee.prototype.configurePlugins).toBe('function');
-			expect(typeof Testee.prototype.getModule).toBe('function');
 			expect(typeof Testee.prototype.$).toBe('function');
-			expect(typeof Testee.prototype.destroy).toBe('function');
+
 		});
 		
 		// @todo really I need this?

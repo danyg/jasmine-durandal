@@ -16,6 +16,7 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 
 	DeferredBlock.prototype.execute = function(onComplete) {
 		var self = this;
+
 		try {
 			this.func.apply(this.spec)
 				.done(function(){
@@ -29,12 +30,13 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 
 		} catch (e) {
 			this.spec.fail(e);
+			onComplete();
 		}
 	};
 
 
-	window.xdescribeModule = function(description){
-		xdescribe(description);
+	window.xdescribeModule = function(description, moduleId, specDefinition){
+		xdescribe(description, specDefinition);
 	};
 
 	function createSuiteOnExecute(suite, durandal){
@@ -59,14 +61,17 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 					spec.execute = createSuiteOnExecute(spec, durandal);
 				}
 			}
+			
 			return oldExecute.apply(this, arguments);
 		};
 	}
 
 	window.describeModule = function(description, moduleId, specDefinitions) {
 		var suite = jasmine.getEnv().describe(description, function() {
+
 			this.durandal = new DurandalEnvironment(moduleId);
 			this.execute = createSuiteOnExecute(this, this.durandal);
+			
 			specDefinitions.call(this);
 		});
 

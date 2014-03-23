@@ -20,11 +20,21 @@ define([], function(){
 	}
 
 	SpyStub.prototype.stub = function(code){
+		if(!code){
+			code = function(){
+				return true;
+			};
+		}
 		this._parent[this._method] = code;
 	};
 
 	SpyStub.prototype.spy = function(code){
 		var me = this;
+		
+		if(typeof code !== 'function'){
+			throw new TypeError('code must be a function');
+		}
+		
 		if(this._original !== false){
 			this._parent[this._method] = function(){
 				var retvalue = me._original.apply(this, arguments);
@@ -33,7 +43,7 @@ define([], function(){
 			};
 		}else{
 			this._parent[this._method] = function(){
-				code.call(this, arguments);
+				code();
 			};
 		}
 	};

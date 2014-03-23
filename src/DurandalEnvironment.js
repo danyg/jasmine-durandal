@@ -18,19 +18,22 @@ define([
 
 	'use strict';
 	function DurandalEnvironment(moduleId){
+		var me = this;
+
 		this._originalCompositionComplete = false;
 		this._moduleId = moduleId;
 		this._id = system.guid();
 		this._toRestore = [];
 
-		this.on('ERROR', this.destroy.bind(this));
+		this.on('ERROR', function(){
+			me.destroy();
+		});
 
-		var me = this;
 		viewEngine.createFallbackView = function(viewId, requirePath, err){
 			return system.defer(function(defer){
 				var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
-				defer.reject(message);
 				me.trigger('ERROR', message);
+				defer.reject(message);
 				throw err;
 			}).promise();
 		};
@@ -47,18 +50,54 @@ define([
 		return system.defer(function(defer){
 			me.trigger('beforeStart');
 			setTimeout(function(){
-				system.debug(true);
-				me._stub(system, 'error', function(log){
-					me.trigger('ERROR', log.message);
-				});
-				me._spyModule();
-				me.on('compositionComplete').then(defer.resolve);
-				me.on('ERROR').then(defer.reject);
-
-				me._createRootElement();
-				me._startApp();
+				me._destroyThenStart(defer);
 			}, 1);
+			setTimeout(function(){
+				if(defer.state() === 'pending'){
+					defer.reject('To many time');
+				}
+			}, 5000);
 		}).promise();
+	};
+
+	DurandalEnvironment.prototype._destroyThenStart = function(defer){
+		var me = this;
+		
+		this.destroy()
+			.done(function(){
+				me._start(defer);
+			})
+			.fail(function(e){
+				defer.reject(e);
+			})
+		;
+	};
+	
+	DurandalEnvironment.prototype._start = function(defer){
+console.log('%cSTARTING: ' + this._moduleId, 'background: skyblue; color: black;');
+		var me = this;
+
+		system.debug(true);
+		this._stub(system, 'error', function(log){
+			me.trigger('ERROR', log.message);
+		});
+		this._spyModule();
+
+		var errSub, endSub;
+
+		errSub = this.on('ERROR').then(function(e){
+console.log('%cERROR: ' + this._moduleId + ': ' + e, 'background: red; color: white;');
+			endSub.off();
+			defer.reject(e);
+		});
+		endSub = this.on('compositionComplete').then(function(){
+console.log('%ccompositionComplete: ' + this._moduleId, 'background: green; color: white;');
+			defer.resolve();
+			errSub.off();
+		});
+
+		this._createRootElement();
+		this._startApp();		
 	};
 
 	DurandalEnvironment.prototype.configurePlugins = function(plugins){
@@ -76,25 +115,39 @@ define([
 	DurandalEnvironment.prototype.destroy = function(){
 		var me = this;
 		return system.defer(function(defer){
-			try{
-				if(me._toRestore.length > 0){
-					var i;
-					for(i = 0; i < me._toRestore.length; i++){
-						me._toRestore[i].restore();
-					}
-				}
+			me._destroy(defer);
+		}).promise();
+	};
+	
+	DurandalEnvironment.prototype._destroy = function(defer){
+console.log('%cDESTROING: ' + this._moduleId, 'background: skyblue; color: black;');
+		if(this._toRestore.length > 0){
+			var i;
+			for(i = 0; i < this._toRestore.length; i++){
+				this._toRestore[i].restore();
+			}
+		}
 
-				$(me._container).remove();
+		if(!this._container || !this._container.parentNode){
+console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white;');
+			defer.resolve();
+		}else{
+
+			try{
+				$(this._container).remove();
 				var containerOnDom = true;
 				while(containerOnDom){
-					containerOnDom = !!me._container.parentNode;
+					containerOnDom = !!this._container.parentNode;
 				}
+	console.log('%cDESTROYED 2: ' + this._moduleId, 'background: green; color: white;');
 				defer.resolve();
 			}catch(e){
+	console.log('%cDESTROYED FAIL: ' + this._moduleId + ': ' +e, 'background: red; color: white;');
+	console.error(e.stack);
 				defer.reject(e);
 			}
-
-		}).promise();
+		}
+		
 	};
 
 	DurandalEnvironment.prototype.beforeStart = function(cbk){
@@ -107,21 +160,13 @@ define([
 
 	DurandalEnvironment.prototype._stub = function(parent, method, code){
 		var stub = new SpyStub(parent, method);
-		if(!!code){
-			stub.stub(code);
-		}else{
-			stub.stub(function(){
-				return true;
-			});
-		}
+		stub.stub(code);
 		this._toRestore.push(stub);
 	};
 
 	DurandalEnvironment.prototype._spy = function(parent, method, code){
 		var spy = new SpyStub(parent, method);
-		if(!!code){
-			spy.spy(code);
-		}
+		spy.spy(code);
 		this._toRestore.push(spy);
 	};
 

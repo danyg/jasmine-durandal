@@ -13,7 +13,9 @@ define([
 
 	'use strict';
 
-	describeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
+	DurandalEnvironment.DEBUG = true;
+
+	xdescribeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
 		var suite = this,
 			durandal = this.durandal,
 			module
@@ -85,6 +87,26 @@ define([
 					module._test = '1';
 				});
 
+			});
+			
+			xdescribeModule('Neested describeModule', 'viewmodels/shell', function(){
+				var durandal2 = this.durandal,
+					module2
+				;
+				durandal2.beforeStart(function() {
+					viewLocator.useConvention();
+				});
+				durandal2.afterStart(function() {
+					module2 = durandal2.getModule();
+				});
+				
+				it('neested is not parent (durandal object)', function(){
+					expect(durandal2).not.toBe(durandal);
+				});
+				
+				it('neested is not parent (module object)', function(){
+					expect(module2).not.toBe(module);
+				});
 			});
 			
 		});

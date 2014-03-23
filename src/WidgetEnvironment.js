@@ -4,7 +4,7 @@
  *  @author Daniel Goberitz <dalgo86@gmail.com>
  *
  */
-define([], function(){
+define(['./widgetLoader'], function(){
 	'use strict';
 	
 	function WidgetEnvironment(moduleId){

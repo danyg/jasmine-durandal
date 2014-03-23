@@ -35,6 +35,7 @@
 		"waitsFor": true,
 		
 		"describeModule": true,
+		"xdescribeModule": true,
 
 		"sinon": true
 	}
