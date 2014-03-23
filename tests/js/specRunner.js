@@ -30,6 +30,8 @@
 		process._events.uncaughtException.splice(0,1);
 	}
 	
+	require.nodeRequire = window.requireNode;
+	
 	var R = '../../../';
 	var info_tests = requireNode('./tests/info_tests'),
 		require_config = {
@@ -37,17 +39,17 @@
 			paths: {
 				// Durandal Config
 				text: R+'libs/requirejs-text/text',
-		        durandal:R+'libs/durandal/js',
-		        plugins: R+'libs/durandal/js/plugins',
-		        transitions: R+'libs/durandal/js/transitions',
-		        knockout: R+'libs/knockout.js/knockout-3.0.0.debug',
-		        bootstrap: R+'libs/bootstrap/bootstrap',
-		        jquery: R+'libs/jquery/jquery-1.10.2',
+				durandal:R+'libs/durandal/js',
+				plugins: R+'libs/durandal/js/plugins',
+				transitions: R+'libs/durandal/js/transitions',
+				knockout: R+'libs/knockout.js/knockout',
+				bootstrap: R+'libs/bootstrap/bootstrap/dist/js/bootstrap.min',
+				jquery: R+'libs/jquery/jquery.min',
 				// END Durandal Config
 
-		        'jasmine-jquery': R+'tests/lib/jasmine-jquery/jasmine-jquery',
+		        'jasmine-jquery': R+'libs/jasmine-jquery/lib/jasmine-jquery',
 		        'sinon': R+'tests/lib/sinon/sinon-1.7.3',
-				specs: info_tests.path.specs,
+				specs: info_tests.path.specs + '/dev',
 				src: R+'src/'
 			},
 		    shim: {
@@ -63,14 +65,14 @@
 		}
 	;
 
-	define('require_config', require_config);
+//	define('require_config', require_config);
 
 	var req = require.config(require_config);
 
-	define('nwgui', window.nwgui);
+//	define('nwgui', window.nwgui);
 
-	req(['jquery', 'jasmine-jquery', 'sinon'], function(){
-		req(['src/DurandalEnvironment'], function(){
+	req(['jquery', 'jasmine-jquery', 'sinon', 'src/DurandalEnvironment'], function(){
+//		req(['src/DurandalEnvironment'], function(){
 			// Load all sources in order to be getched from the code coverage analyzer
 			
 			req(info_tests.sources, function(){
@@ -82,7 +84,7 @@
 					jasmine.getEnv().execute();
 				});
 			});
-		});
+//		});
 	});
 
 window.req = req;

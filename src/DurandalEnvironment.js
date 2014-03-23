@@ -11,8 +11,10 @@ define([
 	'durandal/app',
 	'durandal/events',
 	'durandal/composition',
+	'durandal/binder',
+	'durandal/viewEngine',
 	'jquery'
-], function(SpyStub, system, app, Events, composition, $){
+], function(SpyStub, system, app, Events, composition, binder, viewEngine, $){
 
 	'use strict';
 	function DurandalEnvironment(moduleId){
@@ -22,27 +24,43 @@ define([
 		this._toRestore = [];
 
 		this.on('ERROR', this.destroy.bind(this));
+		
+		var me = this;
+		/*viewEngine.createFallbackView = function(viewId, requirePath, err){
+			return system.defer(function(defer){
+				var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
+				defer.reject(message);
+				console.error(err);
+				me.trigger('ERROR', message);			
+			}).promise();
+		};*/
 
 		this._plugins = {};
 	}
 
 	Events.includeIn(DurandalEnvironment.prototype);
 
+	DurandalEnvironment.DEBUG = false;
+
 	DurandalEnvironment.prototype.init = function(){
 		var me = this;
 		return system.defer(function(defer){
-			system.debug(true);
-			me._stub(system, 'log', function(log){
-				if(log.indexOf('Unable to process binding') !== -1){
-					me.trigger('ERROR', log);
-				}
-			});
-			me._spyModule();
-			me.on('compositionComplete').then(defer.resolve);
-			me.on('ERROR').then(defer.reject);
+			me.trigger('beforeStart');
+			setTimeout(function(){
+				system.debug(true);
+				me._stub(system, 'log', function(log){
+					console.log('DURANDAL SAY:', log);
+				});
+				me._stub(system, 'error', function(log){
+					me.trigger('ERROR', log.message);
+				});
+				me._spyModule();
+				me.on('compositionComplete').then(defer.resolve);
+				me.on('ERROR').then(defer.reject);
 
-			me._createRootElement();
-			me._startApp();
+				me._createRootElement();
+				me._startApp();
+			}, 1);
 		}).promise();
 	};
 
@@ -59,14 +77,39 @@ define([
 	};
 
 	DurandalEnvironment.prototype.destroy = function(){
-		if(this._toRestore.length > 0){
-			var i;
-			for(i = 0; i < this._toRestore.length; i++){
-				this._toRestore[i].restore();
-			}
-		}
+		var me = this;
+		return system.defer(function(defer){
+			try{
+				if(me._toRestore.length > 0){
+					var i;
+					for(i = 0; i < me._toRestore.length; i++){
+						me._toRestore[i].restore();
+					}
+				}
 
-		$(this._container).remove();
+				$(me._container).remove();
+				console.log(me._container);
+				var containerOnDom = true;
+				var i = 0;
+				while(containerOnDom){
+					i++;
+					containerOnDom = !!me._container.parentNode;
+				}
+				console.log('whiles', i);
+				defer.resolve();
+			}catch(e){
+				defer.reject(e);
+			}
+		
+		}).promise();
+	};
+	
+	DurandalEnvironment.prototype.beforeStart = function(cbk){
+		this.on('beforeStart', cbk);
+	};
+	
+	DurandalEnvironment.prototype.afterStart = function(cbk){
+		this.on('afterStart', cbk);
 	};
 
 	DurandalEnvironment.prototype._stub = function(parent, method, code){
@@ -127,12 +170,15 @@ define([
 		}
 
 		this._spy(target, 'compositionComplete', function(promise){
+			console.log('compositionComplete/////');
 			if(!!promise && !!promise.then){
 				promise.then(function(){
+					me.trigger('afterStart');
 					me.trigger('compositionComplete');
 				});
 			}else{
-				me.trigger('compositionComplete');
+				me.trigger('afterStart');			// this enable the getModule reach
+				me.trigger('compositionComplete'); // this execute the suite
 			}
 		});
 	};
@@ -148,7 +194,7 @@ define([
 		this._container.className = 'DurandalEnvironment';
 		this._container.style.position = 'absolute';
 
-		if(window.DEBUG){
+		if(DurandalEnvironment.DEBUG){
 			this._container.style.left = '50%';
 			this._container.style.top = '50%';
 			this._container.style.marginLeft = '-320px';
@@ -175,7 +221,8 @@ define([
 		if(this._plugins){
 			app.configurePlugins(this._plugins);
 		}
-
+		
+		binder.throwOnErrors = true;
 		app.start().then(function(){
 			app.setRoot(me._moduleId, undefined, me._id);
 		});

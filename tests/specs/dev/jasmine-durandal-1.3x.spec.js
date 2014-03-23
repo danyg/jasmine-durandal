@@ -7,25 +7,28 @@
 define([
 	'src/DurandalEnvironment',
 	'viewmodels/welcome',
+	'durandal/viewLocator',
 	'src/jasmine-durandal-1.3x'
-], function(DurandalEnvironment, Welcome){
+], function(DurandalEnvironment, Welcome, viewLocator){
 	
 	describeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
-		var suite = this;
-		var durandal = this.durandal;
+		var suite = this,
+			durandal = this.durandal,
+			module
+		;
 		
-		beforeEach(function(){
+		durandal.beforeStart(function(){
+			viewLocator.useConvention();
+		});
+		durandal.afterStart(function(){
 			module = durandal.getModule();
 		});
 		
 		it('this is a suite', function(){
 			expect(suite).toBeDefined();
-		});
-		
-		it('this is a suite', function(){
 			expect(suite.constructor).toBe(jasmine.Suite);
 		});
-		
+
 		it('Durandal Environment exists', function(){
 			expect(durandal).toBeDefined();
 		});

@@ -6,38 +6,44 @@
  */
 
 define([
+	'src/WidgetEnvironment',
 	'src/DurandalEnvironment',
 	'durandal/app',
 	'durandal/viewLocator',
 	'durandal/events',
 	'viewmodels/welcome',
 	'viewmodels/error'
-], function(Testee, app, viewLocator, Events, okModule, errorModule){
+], function(Testee, DurandalEnvironment, app, viewLocator, Events, okModule, errorModule){
 	window.DEBUG = true;
 
-	describe('DurandalEnvironment', function(){
+	xdescribe('WidgetEnvironment', function(){
 
 		it('Has a Public API', function(){
+			expect(typeof Testee.prototype.newInstance).toBe('function');
+			expect(typeof Testee.prototype.getCurrentInstance).toBe('function');
+
+			// Inherited
 			expect(typeof Testee).toBe('function');
 			expect(typeof Testee.prototype.init).toBe('function');
 			expect(typeof Testee.prototype.configurePlugins).toBe('function');
+			expect(typeof Testee.prototype.getModule).toBe('function');
 			expect(typeof Testee.prototype.$).toBe('function');
 			expect(typeof Testee.prototype.destroy).toBe('function');
+		});
+		
+		// @todo really I need this?
+		it('Should extends from DurandalEnvironment', function(){
+			expect(Testee.prototype instanceof DurandalEnvironment).toBe(true);
 		});
 
 		describe('Functionality', function(){
 
 			beforeEach(function(){
-				sinon.spy(app, 'start');
-				sinon.spy(app, 'configurePlugins');
-				sinon.spy(app, 'setRoot');
-				
+								
 				sinon.spy(Testee.prototype, 'destroy');
 			});
 			afterEach(function(){
-				app.start.restore();
-				app.configurePlugins.restore();
-				app.setRoot.restore();
+				
 				Testee.prototype.destroy.restore();
 			});
 
@@ -86,12 +92,12 @@ define([
 				}, 1000);
 
 				runs(function(){
-					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by DurandalEnvironment
+					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by WidgetEnvironment
 
 					expect(app.setRoot.calledOnce).toBe(true);
-					expect($('body >.DurandalEnvironment')).toBeInDOM();
+					expect($('body >.WidgetEnvironment')).toBeInDOM();
 					
-					expect(denv.$('h2')).toEqual($('body >.DurandalEnvironment [data-view="views/welcome"] >h2'));
+					expect(denv.$('h2')).toEqual($('body >.WidgetEnvironment [data-view="views/welcome"] >h2'));
 					expect(denv.$('h2')).toHaveAttr('data-bind');
 					expect(denv.$('h2').attr('data-bind')).toEqual('html:displayName');
 					expect(denv.$('h2').html()).toEqual('Welcome to the Durandal Starter Kit!');
@@ -100,7 +106,7 @@ define([
 					
 					denv.destroy();
 					expect(okModule.prototype.compositionComplete).toBeUndefined();
-					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
+					expect($('body >.WidgetEnvironment')).not.toBeInDOM();
 					
 				});
 
@@ -140,7 +146,7 @@ define([
 					expect(error).toBeDefined();
 					expect(error.indexOf('error is not defined')).not.toBe(-1);
 					expect(denv.destroy.called).toBe(true);
-					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
+					expect($('body >.WidgetEnvironment')).not.toBeInDOM();
 				});
 			});
 		});
