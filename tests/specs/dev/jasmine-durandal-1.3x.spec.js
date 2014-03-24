@@ -15,7 +15,7 @@ define([
 
 	DurandalEnvironment.DEBUG = true;
 
-	xdescribeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
+	describeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
 		var suite = this,
 			durandal = this.durandal,
 			module

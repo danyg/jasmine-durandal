@@ -21,7 +21,7 @@
 		return widgetLoader;
 	});
 
-	define('text!widgetLoader.htmlf', function(){
+	define('text!widgetLoader.html', function(){
 
 		return '<div id="widgetLoader">' +
 			'<!-- ko if: !!_widgetSettings() -->' +

@@ -33,18 +33,20 @@ define([
 		describe('Functionality', function(){
 
 			beforeEach(function(){
-//				sinon.spy(app, 'start');
-//				sinon.spy(app, 'configurePlugins');
-//				sinon.spy(app, 'setRoot');
+				viewLocator.useConvention();
+				sinon.spy(app, 'start');
+				sinon.spy(app, 'configurePlugins');
+				sinon.spy(app, 'setRoot');
 
-				//sinon.spy(Testee.prototype, 'destroy');
+				sinon.spy(Testee.prototype, 'destroy');
 			});
+			
 			afterEach(function(){
-//				app.start.restore();
-//				app.configurePlugins.restore();
-//				app.setRoot.restore();
+				app.start.restore();
+				app.configurePlugins.restore();
+				app.setRoot.restore();
 
-				//Testee.prototype.destroy.restore();
+				Testee.prototype.destroy.restore();
 			});
 
 			it('default lifecycle', function(){
@@ -53,22 +55,13 @@ define([
 					denv
 				;
 				runs(function(){
-					expect(typeof okModule).toBe('function');
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
-
 					denv = new Testee('viewmodels/welcome');
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
-				});
-
-				waits(100);
-
-				runs(function(){
 					denv.configurePlugins({
 						router:true,
 						dialog: true,
 						widget: true
 					});
-					viewLocator.useConvention();
+					
 					var prom = denv.init();
 
 
@@ -91,13 +84,13 @@ define([
 
 				runs(function(){
 					expect(error).toBe(false);
-//					expect(app.configurePlugins.calledOnce).toBe(true);
-//					expect(app.start.calledOnce).toBe(true);
+					expect(app.configurePlugins.calledOnce).toBe(true);
+					expect(app.start.calledOnce).toBe(true);
+					expect(app.setRoot.calledOnce).toBe(true);
 
-					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by DurandalEnvironment
-
-//					expect(app.setRoot.calledOnce).toBe(true);
 					expect($('body >.DurandalEnvironment')).toBeInDOM();
+					
+					expect(denv.getModule() instanceof okModule).toBe(true);
 
 					expect(denv.$('h2')).toEqual($('body >.DurandalEnvironment [data-view="views/welcome"] >h2'));
 					expect(denv.$('h2')).toHaveAttr('data-bind');
@@ -107,14 +100,54 @@ define([
 				runs(function(){
 
 					denv.destroy();
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
 					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 
 				});
 
 			});
+			
+			it('beforeStart & afterStart are triggered properly', function(){
+				var beforeStart = false,
+					afterStart = false,
+					started = false,
+					error = false,
+					denv
+				;
+				
+				runs(function(){
+					denv = new Testee('viewmodels/welcome');
+					denv.beforeStart(function(){
+						beforeStart = Date.now();
+					});
+					denv.afterStart(function(){
+						afterStart = Date.now();
+					});
+					
+					denv.init()
+						.done(function(){
+							started = Date.now();
+						})
+						.fail(function(err){
+							error = 'ERROR: ' + err;
+						})
+					;
+					expect(beforeStart).toBeTruthy();
+				});
+				
+				waitsFor(function(){
+					return !!started || !!error;
+				}, 1000, 'waiting for started on beforestart');
+				
+				runs(function(){
+					expect(error).toBe(false);
 
-			xit('error on the view', function(){
+					expect(afterStart).toBeTruthy();
+					expect(afterStart).toBeLessThan(started);
+					denv.destroy();
+				});
+			});
+
+			it('error on the view', function(){
 				var error = false,
 					started = false,
 					denv
@@ -141,12 +174,12 @@ define([
 
 				waitsFor(function(){
 					return !!error || !!started;
-				}, 1000);
+				}, 1000, 'waiting for error');
 
 				runs(function(){
 					expect(error).toBeDefined();
 					expect(error.indexOf('error.text')).not.toBe(-1);
-					//expect(denv.destroy.called).toBe(true);
+					expect(denv.destroy.called).toBe(true);
 					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 				});
 			});
@@ -183,7 +216,7 @@ define([
 				runs(function(){
 					expect(error).toBeDefined();
 					expect(error.indexOf('missingView')).not.toBe(-1);
-					//expect(denv.destroy.called).toBe(true);
+					expect(denv.destroy.called).toBe(true);
 					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 				});
 			});
@@ -191,7 +224,7 @@ define([
 			describe('should init several times', function(){
 				var error = false,
 					started = false,
-					denv = new Testee('viewmodels/welcome');
+					denv = new Testee('viewmodels/welcome')
 				;
 				
 				it('default behavior', function(){
@@ -284,51 +317,61 @@ define([
 					});
 				});
 
-				/*
+				it('even more times', function(){
+					
+					runs(function(){
+						expect(started).toBe(true);
+						expect(error).toBe(false);
 
-				waitsFor(function(){
-					return !!started || !!error;
-				}, 1000, '3th Time');
-				
-				runs(function(){
-					expect(started).toBe(true);
-					expect(error).toBe(false);
-					
-					error = false;
-					started = false;
-					denv.destroy();
-					
-					denv.init()
-						.done(function(){
-							started = true;
-						})
-						.fail(function(err){
-							error = 'ERROR: ' + err;
-						})
-					;
+						error = false;
+						started = false;
+						denv.destroy();
+
+						denv.init()
+							.done(function(){
+								started = true;
+							})
+							.fail(function(err){
+								error = 'ERROR: ' + err;
+							})
+						;
+					});
+
+					waitsFor(function(){
+						return !!started || !!error;
+					}, 1000, '5th Time');
+
+					runs(function(){
+						expect(started).toBe(true);
+						expect(error).toBe(false);
+
+						error = false;
+						started = false;
+						denv.destroy();
+
+						denv.init()
+							.done(function(){
+								started = true;
+							})
+							.fail(function(err){
+								error = 'ERROR: ' + err;
+							})
+						;
+					});
+
+					waitsFor(function(){
+						return !!started || !!error;
+					}, 1000, '6th Time');
+
+					runs(function(){
+						expect(started).toBe(true);
+						expect(error).toBe(false);
+
+						error = false;
+						started = false;
+						denv.destroy();
+					});
 				});
-
-				waitsFor(function(){
-					return !!started || !!error;
-				}, 1000, '4th Time');
-
-				runs(function(){
-					expect(started).toBe(true);
-					expect(error).toBe(false);
-					
-					error = false;
-					started = false;
-					denv.destroy();
-					
-					denv.init()
-						.done(function(){
-							started = true;
-						})
-						.fail(function(err){
-							error = 'ERROR: ' + err;
-						})
-					;
-				});*/
 			});
 		});
 

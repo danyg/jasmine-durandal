@@ -11,7 +11,7 @@ define([
 	
 	'use strict';
 	
-	xdescribeModule('widgetLoader', 'widgetLoader', function(){
+	describeModule('widgetLoader', 'widgetLoader', function(){
 		var durandal = this.durandal,
 			module
 		;

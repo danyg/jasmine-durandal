@@ -13,30 +13,80 @@ define([
 	'durandal/composition',
 	'durandal/binder',
 	'durandal/viewEngine',
+	'durandal/viewLocator',
 	'jquery'
-], function(SpyStub, system, app, Events, composition, binder, viewEngine, $){
+], function(SpyStub, system, app, Events, composition, binder, viewEngine, viewLocator, $){
 
 	'use strict';
+
+	var viewEngineNotifier = {
+		createFallbackViewStub: null,
+		_setUp: function(){
+			var me = this;
+			this.createFallbackViewStub = new SpyStub(viewEngine, 'createFallbackView');
+
+			this.createFallbackViewStub.stub(function(viewId, requirePath, err){
+				return system.defer(function(defer){
+					var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
+					_log('ERROR', message, '[' + viewId + ']');
+					me.trigger('missingView_' + viewId, message);
+					defer.reject(message);
+					throw err;
+				}).promise();
+			});
+		}
+	};
+
+	/**
+	 * 
+	 * @param {type} lvl
+	 * @param {...} msg
+	 * @returns {undefined}
+	 */
+	function _log(lvl, args){
+		lvl = arguments[0].toString().toUpperCase();
+		args = Array.prototype.splice.call(arguments, 1);
+
+		if(!!window.navigator.vendor && (window.navigator.vendor.match(/google/i) || window.navigator.vendor.match(/mozilla/i) )){
+			var css;
+			switch(lvl){
+			case 'INFO':
+				css = 'background: skyblue; color: black;';
+				break;
+			case 'WARN':
+				css = 'background: orange; color: black;';
+				break;
+			case 'ERROR':
+				css = 'background: red; color: white; font-size: 1.2em;';
+				break;
+			case 'DEBUG':
+				css = 'background: green; color: white';
+				break;
+			}
+
+			window.console.log('%c' + args.join(' '), css);
+		}else{
+			window.console.log(lvl + ': ' + args.join(' '));
+		}
+
+	}
+
+	Events.includeIn(viewEngineNotifier);
+	viewEngineNotifier._setUp();
+
 	function DurandalEnvironment(moduleId){
 		var me = this;
 
-		this._originalCompositionComplete = false;
 		this._moduleId = moduleId;
+		this._viewEngineSubscriptions = [];
+		this._viewId = moduleId; // calculated in init
 		this._id = system.guid();
 		this._toRestore = [];
+		this._log('INFO', 'CREATING');
 
 		this.on('ERROR', function(){
 			me.destroy();
 		});
-
-		viewEngine.createFallbackView = function(viewId, requirePath, err){
-			return system.defer(function(defer){
-				var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
-				me.trigger('ERROR', message);
-				defer.reject(message);
-				throw err;
-			}).promise();
-		};
 
 		this._plugins = {};
 	}
@@ -46,35 +96,60 @@ define([
 	DurandalEnvironment.DEBUG = false;
 
 	DurandalEnvironment.prototype.init = function(){
+		this._log('INFO', 'INIT');
 		var me = this;
 		return system.defer(function(defer){
 			me.trigger('beforeStart');
 			setTimeout(function(){
 				me._destroyThenStart(defer);
 			}, 1);
-			setTimeout(function(){
-				if(defer.state() === 'pending'){
-					defer.reject('To many time');
-				}
-			}, 5000);
 		}).promise();
 	};
 
 	DurandalEnvironment.prototype._destroyThenStart = function(defer){
+		this._log('DEBUG', 'DESTROY THEN START');
+
+
+
 		var me = this;
-		
+
 		this.destroy()
 			.done(function(){
 				me._start(defer);
 			})
 			.fail(function(e){
+				this._log('warning', 'INIT DEFER REJECTED because destroy fails');
 				defer.reject(e);
 			})
 		;
 	};
-	
+
+	DurandalEnvironment.prototype._listenViewEngine = function(){
+		var me = this;
+		this._viewId = viewLocator.convertModuleIdToViewId(this._moduleId);
+
+		this._cleanViewEngineSubscribers();
+
+		this._viewEngineSubscriptions.push(viewEngineNotifier
+			.on('missingView_' + this._viewId + ' compositionFail_' + this._viewId)
+				.then(function(e){
+					me.trigger('ERROR', e);
+				})
+		);
+	};
+
+	DurandalEnvironment.prototype._cleanViewEngineSubscribers = function(){
+		var i;
+		if(this._viewEngineSubscriptions.length > 0){
+			for(i = 0; i < this._viewEngineSubscriptions.length; i++){
+				this._viewEngineSubscriptions[i].off();
+			}
+		}
+	};
+
 	DurandalEnvironment.prototype._start = function(defer){
-console.log('%cSTARTING: ' + this._moduleId, 'background: skyblue; color: black;');
+		this._listenViewEngine();
+		this._log('INFO', 'STARTING');
 		var me = this;
 
 		system.debug(true);
@@ -86,18 +161,20 @@ console.log('%cSTARTING: ' + this._moduleId, 'background: skyblue; color: black;
 		var errSub, endSub;
 
 		errSub = this.on('ERROR').then(function(e){
-console.log('%cERROR: ' + this._moduleId + ': ' + e, 'background: red; color: white;');
+			this._log('ERROR', e);
 			endSub.off();
+			this._log('WARNING', 'INIT DEFER REJECTED because error:');
 			defer.reject(e);
 		});
-		endSub = this.on('compositionComplete').then(function(){
-console.log('%ccompositionComplete: ' + this._moduleId, 'background: green; color: white;');
+		endSub = this.on('renderEnd').then(function(){
+			this._log('DEBUG', 'renderEnds');
+			this._log('INFO', 'INIT DEFER RESOLVED because renderEnds');
 			defer.resolve();
 			errSub.off();
 		});
 
 		this._createRootElement();
-		this._startApp();		
+		this._startApp();
 	};
 
 	DurandalEnvironment.prototype.configurePlugins = function(plugins){
@@ -118,18 +195,15 @@ console.log('%ccompositionComplete: ' + this._moduleId, 'background: green; colo
 			me._destroy(defer);
 		}).promise();
 	};
-	
+
 	DurandalEnvironment.prototype._destroy = function(defer){
-console.log('%cDESTROING: ' + this._moduleId, 'background: skyblue; color: black;');
-		if(this._toRestore.length > 0){
-			var i;
-			for(i = 0; i < this._toRestore.length; i++){
-				this._toRestore[i].restore();
-			}
-		}
+		this._log('INFO','DESTROING');
+
+		this._cleanViewEngineSubscribers();
+		this._restoreStubSpy();
 
 		if(!this._container || !this._container.parentNode){
-console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white;');
+			this._log('DEBUG', 'DESTROYED nothing to destroy');
 			defer.resolve();
 		}else{
 
@@ -139,15 +213,26 @@ console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white
 				while(containerOnDom){
 					containerOnDom = !!this._container.parentNode;
 				}
-	console.log('%cDESTROYED 2: ' + this._moduleId, 'background: green; color: white;');
+				this._log('DEBUG', 'DESTROYED real destroy');
 				defer.resolve();
 			}catch(e){
-	console.log('%cDESTROYED FAIL: ' + this._moduleId + ': ' +e, 'background: red; color: white;');
-	console.error(e.stack);
+				this._log('ERROR', 'DESTROYED FAIL: ', e);
+				if(DurandalEnvironment.DEBUG){
+					window.console.log(!!e.stack ? e.stack : 'NO STACKTRACE INFORMED');
+				}
 				defer.reject(e);
 			}
 		}
-		
+
+	};
+
+	DurandalEnvironment.prototype._restoreStubSpy = function(){
+		if(this._toRestore.length > 0){
+			var i;
+			for(i = 0; i < this._toRestore.length; i++){
+				this._toRestore[i].restore();
+			}
+		}
 	};
 
 	DurandalEnvironment.prototype.beforeStart = function(cbk){
@@ -175,7 +260,7 @@ console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white
 		system.acquire(this._moduleId)
 			.done(function(module){
 				me._storeModule(module);
-				me._spyCompositionComplete(module);
+//				me._spyCompositionComplete(module);
 			})
 			.fail(function(err){
 				me.trigger('ERROR', new URIError('Module ' + me._moduleId + ' Can\'t be acquired REASON:' + err));
@@ -187,37 +272,28 @@ console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white
 		var me = this;
 		this._module = module;
 
-		if(typeof module !== 'function'){
-			this._testModule = module;
-		}else{
-			var orig = composition.bindAndShow;
-			this._stub(composition, 'bindAndShow', function(child, context){
-				me._testModule = context.model;
-				return orig.apply(this, arguments);
-			});
-		}
+		// this is a SPY but spy don't allow to get all the incoming data...
+		var origFinalize = composition.finalize;
+		this._stub(composition, 'finalize', function(context){
+			// WHEN FINALIZE ENDS, then you have a view rendered in order to interact with... there is no any other solution (deferred...) to know when a view is completed
+			var ret = origFinalize.apply(this, arguments);
+
+			me._onViewRendererAndVisible(context);
+
+			return ret;
+		});
+
 	};
 
-	DurandalEnvironment.prototype._spyCompositionComplete = function(){
-		var me = this,
-			target = this._module
-		;
+	DurandalEnvironment.prototype._onViewRendererAndVisible = function(context){
+		this._restoreStubSpy();
 
-		if(typeof target === 'function'){
-			target = this._module.prototype;
-		}
+		this._moduleViewElement = context.child;
+		this._testModule = context.model;
+		this._log('debug', 'testModule Setted');
+		this.trigger('afterStart');
 
-		this._spy(target, 'compositionComplete', function(promise){
-			if(!!promise && !!promise.then){
-				promise.then(function(){
-					me.trigger('afterStart');
-					me.trigger('compositionComplete');
-				});
-			}else{
-				me.trigger('afterStart');			// this enable the getModule reach
-				me.trigger('compositionComplete'); // this execute the suite
-			}
-		});
+		this.trigger('renderEnd');
 	};
 
 	DurandalEnvironment.prototype._createRootElement = function(){
@@ -264,6 +340,13 @@ console.log('%cDESTROYED 1: ' + this._moduleId, 'background: green; color: white
 			app.setRoot(me._moduleId, undefined, me._id);
 		});
 	};
+
+	DurandalEnvironment.prototype._log = function(){
+		var args = Array.prototype.splice.call(arguments, 0);
+		args.push('[' + this._moduleId + ' with elementId: ' + this._id + ']');
+		_log.apply(null, args);
+	};
+
 
 	return DurandalEnvironment;
 });

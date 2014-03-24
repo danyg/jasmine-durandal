@@ -17,7 +17,7 @@ define([
 
 //	DurandalEnvironment.DEBUG = true; // to see the durandal view output
 
-	xdescribe('HOW TO USE', function(){
+	describe('HOW TO USE', function(){
 
 		describeModule('Welcome Module', 'viewmodels/welcome', function(){
 			var durandal = this.durandal,

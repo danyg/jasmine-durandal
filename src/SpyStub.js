@@ -19,6 +19,10 @@ define([], function(){
 		}
 	}
 
+	SpyStub.prototype.applyOriginal = function(args){
+		return this._original.apply(this._parent, args);
+	};
+	
 	SpyStub.prototype.stub = function(code){
 		if(!code){
 			code = function(){
