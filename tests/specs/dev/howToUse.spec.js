@@ -15,8 +15,8 @@ define([
 
 	'use strict';
 
-//	DurandalEnvironment.DEBUG = true; // to see the durandal view output
-
+	system.debug(false); // you can change this to debug Durandal and DurandalEnvironment to see what happens there
+	
 	describe('HOW TO USE', function(){
 
 		describeModule('Welcome Module', 'viewmodels/welcome', function(){

@@ -97,27 +97,12 @@ module.exports = function( grunt ) {
 		},
 
 		jasmine: {
-			dev: {
-				src: '<%= webapp.appPath %>/**/*.js',
-				options: {
-					specs: '<%= webapp.testPath %>/specs/dev/**/*spec.js',
-
-					keepRunner: false,
-					template: require('grunt-template-jasmine-requirejs-preloader'),
-
-					templateOptions: {
-						requireConfig: requireConfig,
-						requireConfigFile: '<%= webapp.appPath %>/main.js',
-						preloads: ['jquery', 'jasmine-jquery', 'sinon', 'src/DurandalEnvironment']
-					},
-					host: 'http://localhost:<%= connect.dev.options.port %>/',
-					version: '1.3.1'
-				}
-			},
 			tdd: {
 				src: '<%= webapp.appPath %>/**/*.js',
 				options: {
 					specs: '<%= webapp.testPath %>/specs/dev/**/*spec.js',
+					summary: true,
+					display: 'full',
 
 					keepRunner: true,
 					template: require('grunt-template-jasmine-requirejs-preloader'),
@@ -134,7 +119,7 @@ module.exports = function( grunt ) {
 			build: {
 				options: {
 					specs: 'test/specs/build/**/*spec.js',
-					keepRunner: true,
+					keepRunner: false,
 					template: require('grunt-template-jasmine-requirejs-preloader'),
 					templateOptions: {
 						requireConfig: requireConfig,
@@ -214,6 +199,12 @@ module.exports = function( grunt ) {
 		'watch:dev'
 	]);
 
+	grunt.registerTask('test', [
+		'jshint',
+		'exec:bower',
+		'connect:dev',
+		'jasmine:tdd'
+	]);
 	grunt.registerTask('tdd', [
 //		'jshint',
 		'exec:bower',

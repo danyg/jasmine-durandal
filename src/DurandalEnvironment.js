@@ -44,6 +44,9 @@ define([
 	 * @returns {undefined}
 	 */
 	function _log(lvl, args){
+		if(!system.debug()){
+			return;
+		}
 		lvl = arguments[0].toString().toUpperCase();
 		args = Array.prototype.splice.call(arguments, 1);
 
@@ -153,7 +156,7 @@ define([
 		this._log('INFO', 'STARTING');
 		var me = this;
 
-		system.debug(true);
+//		system.debug(true);
 		this._stub(system, 'error', function(log){
 			me.trigger('ERROR', log.message);
 		});
