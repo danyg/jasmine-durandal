@@ -13,7 +13,7 @@ define([
 
 	'use strict';
 
-	DurandalEnvironment.DEBUG = true;
+//	DurandalEnvironment.DEBUG = true;
 
 	describeModule('DurandalEnvironment integrated with jasmine through describeModule', 'viewmodels/welcome', function(){
 		var suite = this,

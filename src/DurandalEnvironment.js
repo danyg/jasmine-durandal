@@ -98,6 +98,7 @@ define([
 	DurandalEnvironment.prototype.init = function(){
 		this._log('INFO', 'INIT');
 		var me = this;
+		this._finalized = false;
 		return system.defer(function(defer){
 			me.trigger('beforeStart');
 			setTimeout(function(){
@@ -156,25 +157,27 @@ define([
 		this._stub(system, 'error', function(log){
 			me.trigger('ERROR', log.message);
 		});
-		this._spyModule();
+		this._spyModule().done(function(){
+			var errSub, endSub;
 
-		var errSub, endSub;
+			errSub = me.on('ERROR').then(function(e){
+				me._log('ERROR', e);
+				endSub.off();
+				me._log('WARNING', 'INIT DEFER REJECTED because error:');
+				defer.reject(e);
+			});
+			endSub = me.on('renderEnd').then(function(){
+				me._log('DEBUG', 'renderEnds');
+				me._log('INFO', 'INIT DEFER RESOLVED because renderEnds');
+				defer.resolve();
+				errSub.off();
+			});
 
-		errSub = this.on('ERROR').then(function(e){
-			this._log('ERROR', e);
-			endSub.off();
-			this._log('WARNING', 'INIT DEFER REJECTED because error:');
-			defer.reject(e);
+			me._createRootElement();
+			me._startApp();
+		}).fail(function(){
+			defer.reject('DurandalEnvironment: Error acquiring the module: ' + me._moduleId);
 		});
-		endSub = this.on('renderEnd').then(function(){
-			this._log('DEBUG', 'renderEnds');
-			this._log('INFO', 'INIT DEFER RESOLVED because renderEnds');
-			defer.resolve();
-			errSub.off();
-		});
-
-		this._createRootElement();
-		this._startApp();
 	};
 
 	DurandalEnvironment.prototype.configurePlugins = function(plugins){
@@ -256,24 +259,47 @@ define([
 	};
 
 	DurandalEnvironment.prototype._spyModule = function(){
-		var me = this;
+		var me = this,
+			defer = system.defer()
+		;
+		me._log('INFO', 'system.acquire LISTEN UP ', this._moduleId);
 		system.acquire(this._moduleId)
 			.done(function(module){
-				me._storeModule(module);
-//				me._spyCompositionComplete(module);
+				me._log('DEBUG', 'system.acquire DONE');
+				me._prepareToStoreModule(module);
+				defer.resolve();
 			})
 			.fail(function(err){
+				me._log('ERROR', 'system.acquire DONE');
 				me.trigger('ERROR', new URIError('Module ' + me._moduleId + ' Can\'t be acquired REASON:' + err));
+				defer.reject();
 			})
 		;
+
+		return defer.promise();
 	};
 
-	DurandalEnvironment.prototype._storeModule = function(module){
-		var me = this;
+	DurandalEnvironment.prototype._prepareToStoreModule = function(module){
+		var me = this,
+			bindAndShowStub,
+			origBindAndShow = composition.bindAndShow,
+			origFinalize = composition.finalize
+		;
+
 		this._module = module;
 
-		// this is a SPY but spy don't allow to get all the incoming data...
-		var origFinalize = composition.finalize;
+		bindAndShowStub = new SpyStub(composition, 'bindAndShow');
+		bindAndShowStub.stub(function(child, context){
+			me._log('debug', 'bindAndShow Response');
+			if(context.model.__moduleId__ === me._moduleId){
+				me._testModule = context.model;
+				me._log('debug', 'testModule Setted');
+				bindAndShowStub.restore();
+			}
+
+			return origBindAndShow.apply(this, arguments);
+		});
+
 		this._stub(composition, 'finalize', function(context){
 			// WHEN FINALIZE ENDS, then you have a view rendered in order to interact with... there is no any other solution (deferred...) to know when a view is completed
 			var ret = origFinalize.apply(this, arguments);
@@ -286,14 +312,15 @@ define([
 	};
 
 	DurandalEnvironment.prototype._onViewRendererAndVisible = function(context){
-		this._restoreStubSpy();
+		if(false === this._finalized && context.model === this._testModule){
+			this._finalized = true;
+			this._restoreStubSpy();
 
-		this._moduleViewElement = context.child;
-		this._testModule = context.model;
-		this._log('debug', 'testModule Setted');
-		this.trigger('afterStart');
+			this._moduleViewElement = context.child;
 
-		this.trigger('renderEnd');
+			this.trigger('afterStart');
+			this.trigger('renderEnd');
+		}
 	};
 
 	DurandalEnvironment.prototype._createRootElement = function(){

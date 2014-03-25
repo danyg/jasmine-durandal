@@ -1,0 +1,13 @@
+<div>
+	<h2>Color Items</h2>
+	<ul data-testid="coloritems_List" data-bind="foreach: {data: listObjects, as: 'item'}">
+		<!-- ko widget: {
+			kind: 'colorItem',
+			title: item.title,
+			color: item.color
+		}-->
+		<!-- /ko -->
+	</ul>
+	
+	<div data-bind="compose: 'viewmodels/composedModule'"></div>
+</div>

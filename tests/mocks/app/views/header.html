@@ -1,0 +1,14 @@
+<div class="navbar">
+	<div class="navbar-inner">
+		<a class="brand" data-bind="attr: { href: navigationFake[0].hash }">
+			<i class="icon-home"></i>
+			<span>Durandal</span>
+		</a>
+		<ul class="nav" data-bind="foreach: navigationFake">
+			<li data-bind="css: { active: isActive }">
+				<a data-bind="attr: { href: hash }, html: title"></a>
+			</li>
+		</ul>
+
+	</div>
+</div>

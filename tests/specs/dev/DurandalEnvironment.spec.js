@@ -11,8 +11,9 @@ define([
 	'durandal/viewLocator',
 	'durandal/events',
 	'viewmodels/welcome',
-	'viewmodels/error'
-], function(Testee, app, viewLocator, Events, okModule, errorModule){
+	'viewmodels/error',
+	'viewmodels/complexModule'
+], function(Testee, app, viewLocator, Events, okModule, errorModule, ComplexModule){
 
 	'use strict';
 
@@ -125,7 +126,7 @@ define([
 					
 					denv.init()
 						.done(function(){
-							started = Date.now();
+							started = Date.now()+1; // if the same exact time
 						})
 						.fail(function(err){
 							error = 'ERROR: ' + err;
@@ -224,7 +225,7 @@ define([
 			describe('should init several times', function(){
 				var error = false,
 					started = false,
-					denv = new Testee('viewmodels/welcome')
+					denv = new Testee('viewmodels/complexModule')
 				;
 				
 				it('default behavior', function(){
@@ -320,9 +321,6 @@ define([
 				it('even more times', function(){
 					
 					runs(function(){
-						expect(started).toBe(true);
-						expect(error).toBe(false);
-
 						error = false;
 						started = false;
 						denv.destroy();
@@ -336,32 +334,38 @@ define([
 							})
 						;
 					});
-
+					
 					waitsFor(function(){
 						return !!started || !!error;
-					}, 1000, '5th Time');
+					}, 1000, '1 Time');
 
-					runs(function(){
-						expect(started).toBe(true);
-						expect(error).toBe(false);
+					function _defineEvenMoreTests(i){
+						runs(function(){
+							expect(started).toBe(true);
+							expect(error).toBe(false);
 
-						error = false;
-						started = false;
-						denv.destroy();
+							error = false;
+							started = false;
+							denv.destroy();
 
-						denv.init()
-							.done(function(){
-								started = true;
-							})
-							.fail(function(err){
-								error = 'ERROR: ' + err;
-							})
-						;
-					});
+							denv.init()
+								.done(function(){
+									started = true;
+								})
+								.fail(function(err){
+									error = 'ERROR: ' + err;
+								})
+							;
+						});
 
-					waitsFor(function(){
-						return !!started || !!error;
-					}, 1000, '6th Time');
+						waitsFor(function(){
+							return !!started || !!error;
+						}, 1000, i + 'th Time');
+					}
+
+					for(var i = 2; i < 10; i++){
+						_defineEvenMoreTests();
+					}
 
 					runs(function(){
 						expect(started).toBe(true);
@@ -373,6 +377,88 @@ define([
 					});
 				});
 			});
+		});
+		
+		describe('should be able to manage modules with compositions and widget and don\'t make a mixup', function(){
+			var MockCtor = ComplexModule,
+				afterStartTriggered,
+				module,
+
+				started = false,
+				error = false,
+				denv = new Testee('viewmodels/complexModule')
+			;
+			
+			beforeEach(function(){
+				viewLocator.useConvention();
+				afterStartTriggered = false;
+				started = false;
+				error = false;
+			});
+			
+			it('module element is an instance of MockCtor', function(){
+				runs(function(){
+					denv.afterStart(function(){
+						afterStartTriggered = true;
+					});
+					denv.init()
+						.done(function(){
+							started = true;
+						})
+						.fail(function(err){
+							error = err;
+						})
+					;
+				});
+				
+				waitsFor(function(){
+					return !!started || !!error;
+				}, 1000, 'waiting for started not mixup');
+				
+				runs(function(){
+					expect(started).toBe(true);
+					expect(error).toBe(false);
+					module = denv.getModule();
+
+					expect(module instanceof MockCtor).toBe(true);
+					
+					denv.destroy();
+				});
+			});
+			
+			it('should mantain the correct module even if a new composition is created', function(){
+				runs(function(){
+					denv.afterStart(function(){
+						afterStartTriggered = true;
+					});
+					denv.init()
+						.done(function(){
+							started = true;
+						})
+						.fail(function(err){
+							error = err;
+						})
+					;
+				});
+				
+				waitsFor(function(){
+					return !!started || !!error;
+				}, 1000, 'waiting for started not mixup');
+				
+				runs(function(){
+					expect(started).toBe(true);
+					module = denv.getModule();
+
+					expect(module instanceof MockCtor).toBe(true, 'module should be instance of ' + MockCtor.name);
+					afterStartTriggered = false; // the afterStart shouldn't be triggered!
+					module.addAnItem();
+					expect(afterStartTriggered).toBe(false);
+					expect(module instanceof MockCtor).toBe(true);
+					
+					denv.destroy();
+				});
+			});
+
 		});
 
 	});
