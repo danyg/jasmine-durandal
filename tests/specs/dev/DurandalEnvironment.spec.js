@@ -270,6 +270,7 @@ define([
 						expect(started).toBe(true);
 						expect(error).toBe(false);
 						denv.destroy();
+						expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 					});
 				});
 				
@@ -315,6 +316,7 @@ define([
 						expect(started).toBe(true);
 						expect(error).toBe(false);
 						denv.destroy();
+						expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 					});
 				});
 
@@ -324,6 +326,7 @@ define([
 						error = false;
 						started = false;
 						denv.destroy();
+//						expect($('.DurandalEnvironment').length).toBe(0);
 
 						denv.init()
 							.done(function(){
@@ -347,6 +350,7 @@ define([
 							error = false;
 							started = false;
 							denv.destroy();
+//							expect($('.DurandalEnvironment').length).toBe(0);
 
 							denv.init()
 								.done(function(){
@@ -374,6 +378,7 @@ define([
 						error = false;
 						started = false;
 						denv.destroy();
+						expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 					});
 				});
 			});

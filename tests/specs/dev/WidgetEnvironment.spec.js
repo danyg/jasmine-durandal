@@ -11,117 +11,102 @@ define([
 	'durandal/app',
 	'durandal/viewLocator',
 	'durandal/events',
-	'viewmodels/welcome',
-	'viewmodels/error'
-], function(Testee, DurandalEnvironment, app, viewLocator, Events, okModule, errorModule){
+	'widgets/good/viewmodel'
+], function(Testee, DurandalEnvironment, app, viewLocator, Events, OkWidget){
 	'use strict';
 
-	xdescribe('WidgetEnvironment', function(){
+	describe('WidgetEnvironment', function(){
 
 		it('Has a Public API', function(){
 			expect(typeof Testee.prototype.newInstance).toBe('function');
 			expect(typeof Testee.prototype.getCurrentInstance).toBe('function');
 			expect(typeof Testee.prototype.$).toBe('function');
+			expect(typeof Testee.prototype.destroy).toBe('function');
 
-		});
-		
-		// @todo really I need this?
-		it('Should extends from DurandalEnvironment', function(){
-			expect(Testee.prototype instanceof DurandalEnvironment).toBe(true);
 		});
 
 		describe('Functionality', function(){
 
 			beforeEach(function(){
-								
 				sinon.spy(Testee.prototype, 'destroy');
 			});
 			afterEach(function(){
-				
 				Testee.prototype.destroy.restore();
+			});
+
+			it('should throws if newInstance is called without settings', function(){
+				var inst = new Testee('good');
+				function testee(){
+					inst.newInstance();
+				}
+				
+				expect(testee).toThrow();
+				inst.destroy();
 			});
 
 			it('default lifecycle', function(){
 				var started = false,
-					denv
+					error = false,
+					denv,
+					widget
 				;
 				runs(function(){
-					expect(typeof okModule).toBe('function');
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
+					expect(typeof OkWidget).toBe('function');
 
-					denv = new Testee('viewmodels/welcome');
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
-				});
-				
-				waits(100);
-				
-				runs(function(){
-					denv.configurePlugins({
-						router:true,
-						dialog: true,
-						widget: true
+					denv = new Testee('good');
+					var prom = denv.newInstance({
+						color: 'green',
+						title: 'ola'
 					});
-					viewLocator.useConvention();
-					var prom = denv.init();
-					
-					
+
 					expect(prom).toBeDefined();
 					expect(typeof prom.then).toBe('function');
-
-					expect(app.configurePlugins.calledOnce).toBe(true);
-					expect(app.start.calledOnce).toBe(true);
 
 					prom
 						.done(function(){
 							started = true;
 						})
 						.fail(function(err){
-							throw err;
+							error = err;
 						})
 					;
 				});
 
 				waitsFor(function(){
-					return started;
+					return !!started || !!error;
 				}, 1000);
 
 				runs(function(){
-					expect(okModule.prototype.compositionComplete).toBeDefined(); // composition complete was spyed by WidgetEnvironment
+					expect(error).toBe(false);
 
-					expect(app.setRoot.calledOnce).toBe(true);
-					expect($('body >.WidgetEnvironment')).toBeInDOM();
-					
-					expect(denv.$('h2')).toEqual($('body >.WidgetEnvironment [data-view="views/welcome"] >h2'));
-					expect(denv.$('h2')).toHaveAttr('data-bind');
-					expect(denv.$('h2').attr('data-bind')).toEqual('html:displayName');
-					expect(denv.$('h2').html()).toEqual('Welcome to the Durandal Starter Kit!');
+					expect($('body >.DurandalEnvironment')).toBeInDOM();
+					widget = denv.getCurrentInstance();
+					expect(widget).toBeDefined();
+					expect(widget instanceof OkWidget).toBe(true);
+
+					expect(denv.$('[data-testid="title"]')).toBeInDOM();
+					expect(denv.$('[data-testid="color"]')).toBeInDOM();
 				});
+				
 				runs(function(){
-					
 					denv.destroy();
-					expect(okModule.prototype.compositionComplete).toBeUndefined();
-					expect($('body >.WidgetEnvironment')).not.toBeInDOM();
-					
+					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 				});
 
 			});
 
-			it('error lifecycle', function(){
+			xit('error lifecycle', function(){
 				var error = false,
 					started = false,
 					denv
 				;
 				runs(function(){
-					expect(typeof errorModule).toBe('function');
-	
-					denv = new Testee('viewmodels/error');
-					denv.configurePlugins({
-						router:true,
-						dialog: true,
-						widget: true
-					});
-					viewLocator.useConvention();
-					denv.init()
+					denv = new Testee('error');
+
+					denv.newInstance({
+						color: 'red',
+						title: 'red'
+					})
 						.done(function(){
 							started = true;
 						})
@@ -136,10 +121,43 @@ define([
 				}, 1000);
 				
 				runs(function(){
-					expect(error).toBeDefined();
-					expect(error.indexOf('error is not defined')).not.toBe(-1);
+					expect(error).not.toBe(false);
+					expect(error.message.indexOf('some error')).not.toBe(-1);
 					expect(denv.destroy.called).toBe(true);
-					expect($('body >.WidgetEnvironment')).not.toBeInDOM();
+					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
+				});
+			});
+
+			it('missingview lifecycle', function(){
+				var error = false,
+					started = false,
+					denv
+				;
+				runs(function(){
+					denv = new Testee('missingview');
+
+					denv.newInstance({
+						color: 'red',
+						title: 'red'
+					})
+						.done(function(){
+							started = true;
+						})
+						.fail(function(err){
+							error = err; // error!
+						})
+					;
+				});
+				
+				waitsFor(function(){
+					return !!error || !!started;
+				}, 1000);
+				
+				runs(function(){
+					expect(error).not.toBe(false);
+					expect(error.toString().indexOf('View Not Found')).not.toBe(-1);
+					expect(denv.destroy.called).toBe(true);
+					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 				});
 			});
 		});

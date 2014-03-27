@@ -41,7 +41,7 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 
 	function createSuiteOnExecute(suite, durandal){
 		var oldExecute = suite.execute;
-		return function(){
+		return function(onComplete){
 			var i, spec;
 
 			var initDurEnv = function(){
@@ -49,6 +49,13 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 			};
 			var endDurEnv = function(){
 				return durandal.destroy();
+			};
+			
+			var oldOnComplete = onComplete;
+			onComplete = function(){
+				durandal.destroy();
+
+				return oldOnComplete.apply(this, arguments);
 			};
 
 			for(i = 0; i < this.queue.blocks.length; i++){
@@ -62,7 +69,7 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 				}
 			}
 			
-			return oldExecute.apply(this, arguments);
+			return oldExecute.call(this, onComplete);
 		};
 	}
 

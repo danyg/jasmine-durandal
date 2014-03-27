@@ -113,4 +113,7 @@ define([
 		
 	});
 	
+//	describeWidget('WidgetEnvironment integrated with jasmine through describeWidget', 'widgets/good', function(){
+//		
+//	});
 });

@@ -7,76 +7,20 @@
 
 define([
 	'./SpyStub',
+	'./_log',
+	'./viewEngineNotifier',
 	'durandal/system',
 	'durandal/app',
 	'durandal/events',
 	'durandal/composition',
 	'durandal/binder',
-	'durandal/viewEngine',
 	'durandal/viewLocator',
 	'jquery'
-], function(SpyStub, system, app, Events, composition, binder, viewEngine, viewLocator, $){
+], function(SpyStub, _log, viewEngineNotifier, system, app, Events, composition, binder, viewLocator, $){
 
 	'use strict';
 
-	var viewEngineNotifier = {
-		createFallbackViewStub: null,
-		_setUp: function(){
-			var me = this;
-			this.createFallbackViewStub = new SpyStub(viewEngine, 'createFallbackView');
-
-			this.createFallbackViewStub.stub(function(viewId, requirePath, err){
-				return system.defer(function(defer){
-					var message = 'View Not Found. Searched for "' + viewId + '" via path "' + requirePath + '".';
-					_log('ERROR', message, '[' + viewId + ']');
-					me.trigger('missingView_' + viewId, message);
-					defer.reject(message);
-					throw err;
-				}).promise();
-			});
-		}
-	};
-
-	/**
-	 * 
-	 * @param {type} lvl
-	 * @param {...} msg
-	 * @returns {undefined}
-	 */
-	function _log(lvl, args){
-		if(!system.debug()){
-			return;
-		}
-		lvl = arguments[0].toString().toUpperCase();
-		args = Array.prototype.splice.call(arguments, 1);
-
-		if(!!window.navigator.vendor && (window.navigator.vendor.match(/google/i) || window.navigator.vendor.match(/mozilla/i) )){
-			var css;
-			switch(lvl){
-			case 'INFO':
-				css = 'background: skyblue; color: black;';
-				break;
-			case 'WARN':
-				css = 'background: orange; color: black;';
-				break;
-			case 'ERROR':
-				css = 'background: red; color: white; font-size: 1.2em;';
-				break;
-			case 'DEBUG':
-				css = 'background: green; color: white';
-				break;
-			}
-
-			window.console.log('%c' + args.join(' '), css);
-		}else{
-			window.console.log(lvl + ': ' + args.join(' '));
-		}
-
-	}
-
-	Events.includeIn(viewEngineNotifier);
-	viewEngineNotifier._setUp();
-
+	
 	function DurandalEnvironment(moduleId){
 		var me = this;
 
@@ -98,6 +42,10 @@ define([
 
 	DurandalEnvironment.DEBUG = false;
 
+	DurandalEnvironment.prototype.isInit = function(){
+		return !!this._finalized;
+	};
+	
 	DurandalEnvironment.prototype.init = function(){
 		this._log('INFO', 'INIT');
 		var me = this;
@@ -197,6 +145,7 @@ define([
 
 	DurandalEnvironment.prototype.destroy = function(){
 		var me = this;
+		this._log('WARN', 'DESTROY');
 		return system.defer(function(defer){
 			me._destroy(defer);
 		}).promise();
@@ -217,7 +166,8 @@ define([
 				$(this._container).remove();
 				var containerOnDom = true;
 				while(containerOnDom){
-					containerOnDom = !!this._container.parentNode;
+					containerOnDom = !!$('#' + this._id).length > 0;
+					$('#' + this._id).parent().remove();
 				}
 				this._log('DEBUG', 'DESTROYED real destroy');
 				defer.resolve();
@@ -327,35 +277,38 @@ define([
 	};
 
 	DurandalEnvironment.prototype._createRootElement = function(){
-		this._moduleIdElement = document.createElement('div');
-		this._moduleIdElement.id = this._id;
+		if(!this._container || !this._container.parentNode){
+			
+			this._moduleIdElement = document.createElement('div');
+			this._moduleIdElement.id = this._id;
 
-		this._moduleIdElement.style.width = '1920px';
-		this._moduleIdElement.style.height = '1080px';
+			this._moduleIdElement.style.width = '1920px';
+			this._moduleIdElement.style.height = '1080px';
 
-		this._container = document.createElement('div');
-		this._container.className = 'DurandalEnvironment';
-		this._container.style.position = 'absolute';
+			this._container = document.createElement('div');
+			this._container.className = 'DurandalEnvironment';
+			this._container.style.position = 'absolute';
 
-		if(DurandalEnvironment.DEBUG){
-			this._container.style.left = '50%';
-			this._container.style.top = '50%';
-			this._container.style.marginLeft = '-320px';
-			this._container.style.marginTop = '-240px';
-		}else{
-			this._container.style.left = '-640px';
-			this._container.style.top = '-480px';
+			if(system.debug()){
+				this._container.style.left = '50%';
+				this._container.style.top = '50%';
+				this._container.style.marginLeft = '-320px';
+				this._container.style.marginTop = '-240px';
+			}else{
+				this._container.style.left = '-640px';
+				this._container.style.top = '-480px';
+			}
+
+			this._container.style.width = '640px';
+			this._container.style.height = '480px';
+			this._container.style.overflow = 'scroll';
+			this._container.style.border = 'solid 1px black';
+			this._container.style.zIndex = '10';
+			this._container.style.background = 'white';
+
+			document.body.appendChild(this._container);
+			this._container.appendChild(this._moduleIdElement);
 		}
-
-		this._container.style.width = '640px';
-		this._container.style.height = '480px';
-		this._container.style.overflow = 'scroll';
-		this._container.style.border = 'solid 1px black';
-		this._container.style.zIndex = '10';
-		this._container.style.background = 'white';
-
-		document.body.appendChild(this._container);
-		this._container.appendChild(this._moduleIdElement);
 	};
 
 	DurandalEnvironment.prototype._startApp = function(){
