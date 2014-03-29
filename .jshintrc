@@ -37,6 +37,12 @@
 		"describeModule": true,
 		"xdescribeModule": true,
 
+		"describeWidget": true,
+		"xdescribeWidget": true,
+
+		"wit": true,
+		"xwit": true,
+
 		"sinon": true
 	}
 }

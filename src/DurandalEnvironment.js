@@ -166,7 +166,7 @@ define([
 				$(this._container).remove();
 				var containerOnDom = true;
 				while(containerOnDom){
-					containerOnDom = !!$('#' + this._id).length > 0;
+					containerOnDom = $('#' + this._id).length > 0;
 					$('#' + this._id).parent().remove();
 				}
 				this._log('DEBUG', 'DESTROYED real destroy');

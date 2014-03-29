@@ -6,8 +6,9 @@
  */
 
 define([
-	'src/widgetLoader'
-], function(testee){
+	'src/widgetLoader',
+	'src/jasmine-durandal-1.3x'
+], function(){
 	
 	'use strict';
 
@@ -74,9 +75,7 @@ define([
 		});
 		
 		it('should preserve the original attached hook', function(){
-			var cc = false,
-				previousLayer
-			;
+			var cc = false;
 			
 			runs(function(){
 				cc = false;

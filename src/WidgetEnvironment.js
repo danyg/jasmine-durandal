@@ -27,7 +27,7 @@ define([
 		this._denv.configurePlugins({
 			widget: true
 		});
-		var me = this;
+
 		this._denv.on('ERROR').then(this.proxy('ERROR'));
 		viewEngineNotifier.on('missingView_' + this._widgetViewId)
 			.then(this.proxy('ERROR'))
@@ -40,6 +40,10 @@ define([
 	}
 	
 	Events.includeIn(WidgetEnvironment.prototype);
+	
+	WidgetEnvironment.prototype.init = function(){
+		return this._denv.init();
+	};
 	
 	WidgetEnvironment.prototype.newInstance = function(settings){
 		var me = this;
@@ -68,6 +72,15 @@ define([
 	
 	WidgetEnvironment.prototype.destroy = function(){
 		return this._denv.destroy();
+	};
+	WidgetEnvironment.prototype.destroyWidget = function(){
+		if(!!this._errSubscription){
+			this._errSubscription.off();
+		}
+		if(this._newInstanceSubscription){
+			this._newInstanceSubscription.off();
+		}
+		this._widgetLoader.setSettings(false);
 	};
 	
 	WidgetEnvironment.prototype._newInstance = function(defer){

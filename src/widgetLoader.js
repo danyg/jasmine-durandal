@@ -5,7 +5,7 @@
  * 
  */
 
-(function(ko){
+(function(){
 	'use strict';
 	
 	define('widgetLoader', ['knockout', 'durandal/events'], function(ko, Events){
@@ -54,7 +54,7 @@
 		'</div>';
 	});
 
-	define(['widgetLoader'], function(widgetLoader){
+	define(['widgetLoader'], function(){
 		return true; // just for advise
 	});
 

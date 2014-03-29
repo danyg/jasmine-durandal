@@ -1,17 +1,19 @@
-/* 
- * 
- *  @overview 
+/*
+ *
+ *  @overview
  *  @author Daniel Goberitz <dalgo86@gmail.com>
- * 
+ *
  */
 
 define([
 	'./SpyStub',
 	'./_log',
-	'durandal/events', 
+	'durandal/events',
 	'durandal/viewEngine',
 	'durandal/system'
 ], function(SpyStub, _log, Events, viewEngine, system){
+	'use strict';
+	
 	var viewEngineNotifier = {
 		createFallbackViewStub: null,
 		_setUp: function(){
@@ -29,9 +31,9 @@ define([
 			});
 		}
 	};
-	
+
 	Events.includeIn(viewEngineNotifier);
 	viewEngineNotifier._setUp();
-	
+
 	return viewEngineNotifier;
 });

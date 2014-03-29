@@ -5,7 +5,10 @@
  *
  */
 
-define(['./DurandalEnvironment'], function(DurandalEnvironment) {
+define([
+	'./DurandalEnvironment',
+	'./WidgetEnvironment'
+], function(DurandalEnvironment, WidgetEnvironment) {
 	'use strict';
 
 	function DeferredBlock() {
@@ -38,6 +41,9 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 	window.xdescribeModule = function(description, moduleId, specDefinition){
 		xdescribe(description, specDefinition);
 	};
+	window.xdescribeWidget = function(description, moduleId, specDefinition){
+		xdescribe(description, specDefinition);
+	};
 
 	function createSuiteOnExecute(suite, durandal){
 		var oldExecute = suite.execute;
@@ -50,7 +56,7 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 			var endDurEnv = function(){
 				return durandal.destroy();
 			};
-			
+
 			var oldOnComplete = onComplete;
 			onComplete = function(){
 				durandal.destroy();
@@ -68,9 +74,34 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 					spec.execute = createSuiteOnExecute(spec, durandal);
 				}
 			}
-			
+
 			return oldExecute.call(this, onComplete);
 		};
+	}
+
+	/**
+	 *
+	 * @param {jasmine.Spec} me
+	 * @returns {jasmine.Suite}
+	 */
+	function findSuiteWithDurandal(me){
+		if(me.suite){
+			var suite = me.suite,
+				cont = true;
+
+			while(cont){
+				if(suite.durandal){
+
+					cont = false;
+				}else{
+					suite = !!suite.parentSuite ? suite.parentSuite : false;
+					cont = !!suite;
+				}
+			}
+
+			return suite;
+		}
+		return false;
 	}
 
 	window.describeModule = function(description, moduleId, specDefinitions) {
@@ -78,12 +109,47 @@ define(['./DurandalEnvironment'], function(DurandalEnvironment) {
 
 			this.durandal = new DurandalEnvironment(moduleId);
 			this.execute = createSuiteOnExecute(this, this.durandal);
-			
+
 			specDefinitions.call(this);
 		});
 
 
 		return suite;
+	};
+
+	window.describeWidget = function(description, widgetId, specDefinitions) {
+		var suite = jasmine.getEnv().describe(description, function() {
+
+			this.durandal = new WidgetEnvironment(widgetId);
+			this.execute = createSuiteOnExecute(this, this.durandal);
+
+			specDefinitions.apply(this, arguments);
+		});
+
+
+		return suite;
+	};
+
+	window.wit = function(desc, settings, itDefinition) {
+		return jasmine.getEnv().it(desc, function(){
+			var suite = findSuiteWithDurandal(this);
+
+			this.after(function(){
+				suite.durandal.destroyWidget();
+			});
+
+			suite.durandal.newInstance(settings)
+				.done(function(){
+					itDefinition.call(this, suite.durandal.getCurrentInstance());
+				})
+				.fail(function(){
+					//@todo do something
+			});
+		});
+	};
+
+	window.xwit = function(desc, settings, itDefinition) {
+		return window.xit(desc, itDefinition);
 	};
 
 });

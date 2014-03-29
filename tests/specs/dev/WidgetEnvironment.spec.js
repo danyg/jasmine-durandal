@@ -18,8 +18,14 @@ define([
 	describe('WidgetEnvironment', function(){
 
 		it('Has a Public API', function(){
+			
+			// proper API
 			expect(typeof Testee.prototype.newInstance).toBe('function');
 			expect(typeof Testee.prototype.getCurrentInstance).toBe('function');
+			expect(typeof Testee.prototype.destroyWidget).toBe('function');
+			
+			// Durandal Environment API
+			expect(typeof Testee.prototype.init).toBe('function');
 			expect(typeof Testee.prototype.$).toBe('function');
 			expect(typeof Testee.prototype.destroy).toBe('function');
 
@@ -54,6 +60,9 @@ define([
 					expect(typeof OkWidget).toBe('function');
 
 					denv = new Testee('good');
+					
+					sinon.spy(denv._denv, 'init');
+					
 					var prom = denv.newInstance({
 						color: 'green',
 						title: 'ola'
@@ -78,6 +87,85 @@ define([
 
 				runs(function(){
 					expect(error).toBe(false);
+					expect(denv._denv.init.called).toBe(true);
+
+					expect($('body >.DurandalEnvironment')).toBeInDOM();
+					widget = denv.getCurrentInstance();
+					expect(widget).toBeDefined();
+					expect(widget instanceof OkWidget).toBe(true);
+
+					expect(denv.$('[data-testid="title"]')).toBeInDOM();
+					expect(denv.$('[data-testid="color"]')).toBeInDOM();
+				});
+				
+				runs(function(){
+					denv.destroy();
+					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
+				});
+
+			});
+			
+			it('default lifecycle using init', function(){
+				var started = false,
+					error = false,
+					denv,
+					widget
+				;
+				runs(function(){
+					expect(typeof OkWidget).toBe('function');
+					denv = new Testee('good');
+
+					sinon.spy(denv._denv, 'init');
+
+					denv.init()
+						.done(function(){
+							started = true;
+						})
+						.fail(function(err){
+							error = err;
+						})
+					;
+				});
+				
+				waitsFor(function(){
+					return !!started || !!error;
+				}, 1000);
+				
+				runs(function(){
+					expect(error).toBe(false);
+
+					started = false;
+					error = false;
+					
+					expect(denv._denv.init.callCount).toBe(1);
+					expect(denv._denv.isInit()).toBe(true);
+
+					var prom = denv.newInstance({
+						color: 'green',
+						title: 'ola'
+					});
+
+					expect(prom).toBeDefined();
+					expect(typeof prom.then).toBe('function');
+
+					prom
+						.done(function(){
+							started = true;
+						})
+						.fail(function(err){
+							error = err;
+						})
+					;
+				});
+
+				waitsFor(function(){
+					return !!started || !!error;
+				}, 1000);
+
+				runs(function(){
+					expect(error).toBe(false);
+					
+					expect(denv._denv.init.callCount).toBe(1);
 
 					expect($('body >.DurandalEnvironment')).toBeInDOM();
 					widget = denv.getCurrentInstance();

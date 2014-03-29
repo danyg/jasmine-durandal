@@ -6,6 +6,8 @@
  */
 
 define(['durandal/system'], function(system){
+	'use strict';
+	
 	/**
 	 * 
 	 * @param {type} lvl
