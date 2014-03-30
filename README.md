@@ -13,7 +13,6 @@ Status: **Beta**
 # Road Map
 
 - Write unit tests for widgets when explodes in the instantiaton even for syntax errors.
-- Write unit tests for widgets when explodes because the view.html is no there.
 - Write unit tests for SpyStub.
 - Write documentation how to 'integrate in your project'.
 - Register in bower & npm.
@@ -23,6 +22,7 @@ Status: **Beta**
 - ~~Write unit tests for modules when explodes in the instantiaton even for syntax errors.~~
 - ~~Write unit tests for modules when explodes because the view.html is no there.~~
 - ~~Create a WidgetEnvironmet that extends for DurandalEnvironment and runs a internal module WidgetHolder.~~
+- ~~Write unit tests for widgets when explodes because the view.html is no there.~~
 
 # How to run the tests
 
