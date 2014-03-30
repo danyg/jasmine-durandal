@@ -1,6 +1,21 @@
 /*global module, require */
 module.exports = function( grunt ) {
 	'use strict';
+	
+	function m(a,b){
+		var i, c = {};
+		for(i in a){
+			c[i] = a[i];
+		}
+		for(i in b){
+			if(typeof(b[i]) === 'object'){
+				c[i] = m(c[i], b[i]);
+			}else{
+				c[i] = b[i];
+			}
+		}
+		return c;
+	}
 
 	// Livereload and connect variables
 	var LIVERELOAD_PORT = 35729;
@@ -16,9 +31,11 @@ module.exports = function( grunt ) {
 	var webappConfig = {
 		srcPath: 'src',
 		srcDir: 'src',
+		buildDir: 'dist',
 		rootPath: 'tests/mocks',
 		appPath: 'tests/mocks/app',
 		testPath: 'tests',
+		specsPath: 'tests/specs',
 		libDir: 'libs',
 		relToApp: '../../../'
 	};
@@ -41,7 +58,8 @@ module.exports = function( grunt ) {
 			'jasmine-jquery': R+'libs/jasmine-jquery/lib/jasmine-jquery',
 			'sinon': R+'tests/lib/sinon/sinon-1.7.3',
 
-			src: R + webappConfig.srcDir
+			src: R + webappConfig.srcDir,
+			specs: R + webappConfig.specsPath
 		},
 		shim: {
 			'bootstrap': {
@@ -54,6 +72,9 @@ module.exports = function( grunt ) {
 			}
 		}
 	};
+	
+	var requireConfig_build_13 = m(requireConfig, {paths: {'jasmine-durandal': R +'<%= webapp.buildDir %>/jasmine-durandal-1.3x'}});
+//	var requireConfig_build_20 = m(requireConfig, {paths: {'jasmine-durandal': R +'<%= webapp.buildDir %>/jasmine-durandal-2.x.js'}});
 
 	grunt.initConfig({
 		webapp: webappConfig,
@@ -61,13 +82,16 @@ module.exports = function( grunt ) {
 		exec: {
 			bower: {
 				cmd: 'bower install'
+			},
+			build_13: {
+				cmd: 'node jasmine-durandal-builder.js --basedir /<%= webapp.srcDir %> --main jasmine-durandal-1.3x.js --output /<%= webapp.buildDir %>'
 			}
 		},
 
 		pkg: grunt.file.readJSON('package.json'),
 
 		clean: {
-			build: ['build/*']
+			build: ['dist/*']
 		},
 
 		jshint: {
@@ -116,15 +140,16 @@ module.exports = function( grunt ) {
 					version: '1.3.1'
 				}
 			},
-			build: {
+			build_13: {
+				src: '<%= webapp.appPath %>/**/*.js',
 				options: {
-					specs: 'test/specs/build/**/*spec.js',
+					specs: '<%= webapp.testPath %>/specs/**/*build_spec_13.js',
 					keepRunner: false,
 					template: require('grunt-template-jasmine-requirejs-preloader'),
 					templateOptions: {
-						requireConfig: requireConfig,
+						requireConfig: requireConfig_build_13,
 						requireConfigFile: '<%= webapp.appPath %>/main.js',
-						preloads: ['jquery', 'jasmine-jquery', 'sinon']
+						preloads: ['jquery', 'jasmine-jquery', 'sinon', 'jasmine-durandal']
 					},
 					version: '1.3.1'
 				}
@@ -147,26 +172,22 @@ module.exports = function( grunt ) {
 				path: 'http://localhost:<%= connect.build.options.port %>'
 			}
 		},
-
-
-//		uglify: {
-//			options: {
-//				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> \n' +
-//					'* Copyright (c) <%= grunt.template.today("yyyy") %> YourName/YourCompany \n' +
-//					'* Available via the MIT license.\n' +
-//					'* see: http://opensource.org/licenses/MIT for blueprint.\n' +
-//					'*/\n'
-//			},
-//			build: {
-//				src: 'build/app/main.js',
-//				dest: 'build/app/main-built.js'
-//			}
-//		},
+		
+		requirejs: {
+			compile: {
+				options: {
+					baseUrl: '',
+					name: '<%= webapp.srcDir %>/jasmine-durandal-1.3x',
+					mainConfigFile: 'buildConfig.js',
+					out: '<%= webapp.buildDir %>/jasmine-durandal.js'
+				}
+			}
+		},
 
 		watch: {
 			build: {
-				files: ['build/**/*.js'],
-				tasks: ['jasmine:build']
+				files: ['<%= webapp.buildDir %>/**/*.js'],
+				tasks: ['jshint', 'exec:build_13', 'jasmine:build:build']
 			},
 			tdd: {
 				files: ['<%= webapp.testPath %>/specs/dev/**/*spec.js', '<%= webapp.srcPath %>/**/*.js', '<%= webapp.appPath %>/**/*.js'],
@@ -186,9 +207,17 @@ module.exports = function( grunt ) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-open');
 	grunt.loadNpmTasks('grunt-exec');
+	
+	grunt.loadNpmTasks('grunt-contrib-requirejs');
 
 //Resgistering Tasks
-	grunt.registerTask('build', ['jshint', 'jasmine:dev', 'clean', 'copy', 'durandal:main', 'uglify', 'jasmine:build', 'connect:build', 'open:build', 'watch:build']);
+	grunt.registerTask('build', [
+		'jshint',
+		'clean',
+		'exec:build_13',
+//		'requirejs:compile'
+		'jasmine:build_13'
+	]);
 
 	grunt.registerTask('default', [
 		'jshint',
