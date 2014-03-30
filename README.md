@@ -1,7 +1,7 @@
 jasmine-durandal
 ================
 
-A jasmine tool to test durandal modules and widgets, in a unitary way
+A jasmine tool to test durandal modules and widgets, in unitary way
 
 Status: **Beta**
 
@@ -23,6 +23,47 @@ Status: **Beta**
 - ~~Write unit tests for modules when explodes because the view.html is no there.~~
 - ~~Create a WidgetEnvironmet that extends for DurandalEnvironment and runs a internal module WidgetHolder.~~
 - ~~Write unit tests for widgets when explodes because the view.html is no there.~~
+
+# How to use
+- Add the distribution file in some place reacheable in your jasmine suite (for the moment only tested on jasmine 1.3.x)
+- Add to your paths in requirejs config ```'jasmine-durandal': 'pathToSpecsHelpers/jasmine-durandal-1.3.x```
+- before load your specs require ```'jasmine-durandal'```
+- if you use jshint or jslint to validate your specs, add in the globals ```describeModule, xdescribeModule, describeWidget, xdescribeWidget, wit, xwit```
+- now you can read, in this repository, the file ```/tests/specs/dev/howToUse.spec.js```
+ 
+## tests for module
+```javascript
+  describeModule('description', 'moduleId', function(){
+    var durandal = this.durandal,
+      module
+    ;
+    
+    durandal.afterStart(function(){
+      module = durandal.getModule(); // the instance of your module
+    });
+    
+    it('description', function(){
+      expect(module).toBeDefined();
+      expect(durandal.$('nav.nav-bar').length).toBe(1); // durandal.$ will search the selector inside of your module view
+    });
+  });
+```
+
+## tests for widget
+```javascript
+  describeWidget('description', 'widgetKind', function(){
+    var durandal = this.durandal,
+      settings = {title: 'a title', color: 'red'}
+    ;
+
+    wit('description', settings, function(testee){ // testee will be the instance of your widget,
+                                        // in every wit, a new instance of your widget is created
+                                        // with the settings received by wit
+      expect(testee).toBeDefined();
+      expect(durandal.$('.title').length).toBe(1); // durandal.$ will search the selector inside of your widget view
+    });
+  });
+```
 
 # How to run the tests
 
