@@ -138,13 +138,21 @@ define([
 				suite.durandal.destroyWidget();
 			});
 
+			var started = false;
+			spec.waitsFor(function(){
+				return started;
+			}, 15000, 'Widget Initialization Timeout');
+
 			suite.durandal.newInstance(settings)
 				.done(function(){
+					started = true;
 					itDefinition.call(this, suite.durandal.getCurrentInstance());
 				})
-				.fail(function(){
+				.fail(function(e){
+					started = true;
+					spec.fail(e);
 					//@todo do something
-			});
+				});
 		});
 	};
 
