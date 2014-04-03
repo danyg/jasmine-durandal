@@ -593,6 +593,16 @@ SOFTWARE.
 			}
 		};
 	
+			
+		WidgetEnvironment.prototype._getSettings = function(){
+			var i, copy = {};
+			for(i in this._settings){
+				if(this._settings.hasOwnProperty(i)){
+					copy[i] = this._settings[i];
+				}
+			}
+			return copy;
+		};
 	
 		WidgetEnvironment.prototype._stub = function(parent, method, code){
 			var stub = new SpyStub(parent, method);
@@ -630,7 +640,7 @@ SOFTWARE.
 		};
 		WidgetEnvironment.prototype._startWidget = function(defer){
 			this._listenWidgetLoader(defer);
-			this._widgetLoader.setSettings(this._settings, this._myId);
+			this._widgetLoader.setSettings(this._getSettings(), this._myId);
 		};
 	
 		WidgetEnvironment.prototype._log = function(){
