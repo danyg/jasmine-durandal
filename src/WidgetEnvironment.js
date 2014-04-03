@@ -7,17 +7,18 @@
 define([
 	'./DurandalEnvironment',
 	'./viewEngineNotifier',
+	'./SpyStub',
+	'./_log',
 	'durandal/events',
 	'durandal/system',
 	'plugins/widget',
 	'jquery',
 	'./widgetLoader'
-], function(DurandalEnvironment, viewEngineNotifier, Events, system, widget, $){
+], function(DurandalEnvironment, viewEngineNotifier, SpyStub, _log, Events, system, widget, $){
 
 	'use strict';
 	
 	function WidgetEnvironment(widgetId){
-
 		this._widgetId = widgetId;
 		this._widgetModuleId = widget.mapKindToModuleId(widgetId);
 		this._widgetViewId = widget.mapKindToViewId(widgetId);
@@ -27,9 +28,23 @@ define([
 		this._denv.configurePlugins({
 			widget: true
 		});
+		this._toRestore = [];
 
-		this._denv.on('ERROR').then(this.proxy('ERROR'));
+		this._log('INFO', 'WidgetEnvironment creating');
+
+		var me = this,
+			l = function(e){
+				me._log('ERROR', 'WidgetEnvironment ERROR', e);
+			}
+		;
+
+		this._denv.on('ERROR')
+			.then(l)
+			.then(this.proxy('ERROR'))
+		;
+
 		viewEngineNotifier.on('missingView_' + this._widgetViewId)
+			.then(l)
 			.then(this.proxy('ERROR'))
 		;
 
@@ -46,6 +61,7 @@ define([
 	};
 	
 	WidgetEnvironment.prototype.newInstance = function(settings){
+		this._log('INFO', 'WidgetEnvironment newInstance ' + this._widgetId);
 		var me = this;
 		if(settings === undefined){
 			throw new TypeError('You should send an object settings to ' + this.constructor.name + '.newInstance');
@@ -71,8 +87,10 @@ define([
 	};
 	
 	WidgetEnvironment.prototype.destroy = function(){
+		this.destroyWidget();
 		return this._denv.destroy();
 	};
+
 	WidgetEnvironment.prototype.destroyWidget = function(){
 		if(!!this._errSubscription){
 			this._errSubscription.off();
@@ -80,7 +98,9 @@ define([
 		if(this._newInstanceSubscription){
 			this._newInstanceSubscription.off();
 		}
-		this._widgetLoader.setSettings(false);
+		if(!!this._widgetLoader){
+			this._widgetLoader.removeWidget();
+		}
 	};
 	
 	WidgetEnvironment.prototype._newInstance = function(defer){
@@ -89,11 +109,19 @@ define([
 			this._errSubscription.off();
 		}
 		this._errSubscription = this.on('ERROR', function(err){
+			me._log('DEBUG', 'Deferred Reject because a error', err);
 			defer.reject(err);
 		});
 		defer.fail(function(){
 			me.destroy();
 		});
+
+		this._stub(system, 'error', function(log){
+			window.console.error(log);
+			me._log('ERROR', 'DURANDAL ERROR', log);
+			me.trigger('ERROR', log);
+		});
+
 		
 		if(!this._denv.isInit()){
 			this._denv.init()
@@ -106,6 +134,23 @@ define([
 			;
 		}else{
 			this._startWidget(defer);
+		}
+	};
+
+
+	WidgetEnvironment.prototype._stub = function(parent, method, code){
+		var stub = new SpyStub(parent, method);
+		stub.stub(code);
+		this._toRestore.push(stub);
+	};
+
+	WidgetEnvironment.prototype._restoreStubSpy = function(){
+		if(this._toRestore.length > 0){
+			var i;
+			for(i = 0; i < this._toRestore.length; i++){
+				this._toRestore[i].restore();
+			}
+			this._toRestore = [];
 		}
 	};
 	
@@ -122,6 +167,7 @@ define([
 				me._widget = widget;
 				me._layer = child;
 				me._newInstanceSubscription.off();
+				me._restoreStubSpy();
 				defer.resolve(widget);
 			})
 		;
@@ -129,6 +175,12 @@ define([
 	WidgetEnvironment.prototype._startWidget = function(defer){
 		this._listenWidgetLoader(defer);
 		this._widgetLoader.setSettings(this._settings, this._myId);
+	};
+
+	WidgetEnvironment.prototype._log = function(){
+		var args = Array.prototype.splice.call(arguments, 0);
+		args.push('[' + this._widgetId + ' with elementId: ' + this._denv._id + ']');
+		_log.apply(null, args);
 	};
 	
 	return WidgetEnvironment;

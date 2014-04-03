@@ -132,7 +132,9 @@ define([
 
 	window.wit = function(desc, settings, itDefinition) {
 		return jasmine.getEnv().it(desc, function(){
-			var suite = findSuiteWithDurandal(this);
+			var suite = findSuiteWithDurandal(this),
+				spec = this
+			;
 
 			this.after(function(){
 				suite.durandal.destroyWidget();

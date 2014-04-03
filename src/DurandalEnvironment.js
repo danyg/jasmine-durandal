@@ -106,6 +106,7 @@ define([
 
 //		system.debug(true);
 		this._stub(system, 'error', function(log){
+			me._log('ERROR', 'GENERAL ERROR', log);
 			me.trigger('ERROR', log.message);
 		});
 		this._spyModule().done(function(){
@@ -124,8 +125,11 @@ define([
 				errSub.off();
 			});
 
-			me._createRootElement();
-			me._startApp();
+			me._createRootElement()
+				.done(function(){
+					me._startApp();
+				})
+			;
 		}).fail(function(){
 			defer.reject('DurandalEnvironment: Error acquiring the module: ' + me._moduleId);
 		});
@@ -188,6 +192,7 @@ define([
 			for(i = 0; i < this._toRestore.length; i++){
 				this._toRestore[i].restore();
 			}
+			this._toRestore = [];
 		}
 	};
 
@@ -277,8 +282,21 @@ define([
 	};
 
 	DurandalEnvironment.prototype._createRootElement = function(){
+		var defer = system.defer();
+
 		if(!this._container || !this._container.parentNode){
-			
+
+			this.__createRootElement(defer);
+
+		}else{
+			defer.resolve();
+		}
+
+		return defer.promise();
+	};
+
+	DurandalEnvironment.prototype.__createRootElement = function(defer){
+		if($('.DURANDAL_ENVIRONMENT_CONTAINER').length === 0){
 			this._moduleIdElement = document.createElement('div');
 			this._moduleIdElement.id = this._id;
 
@@ -286,7 +304,7 @@ define([
 			this._moduleIdElement.style.height = '1080px';
 
 			this._container = document.createElement('div');
-			this._container.className = 'DurandalEnvironment';
+			this._container.className = 'DurandalEnvironment DURANDAL_ENVIRONMENT_CONTAINER';
 			this._container.style.position = 'absolute';
 
 			if(system.debug()){
@@ -308,6 +326,13 @@ define([
 
 			document.body.appendChild(this._container);
 			this._container.appendChild(this._moduleIdElement);
+
+			defer.resolve();
+		} else {
+			var me = this;
+			setTimeout(function(){
+				me.__createRootElement(defer);
+			}, 100);
 		}
 	};
 

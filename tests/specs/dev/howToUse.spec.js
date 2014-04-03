@@ -15,7 +15,7 @@ define([
 
 	'use strict';
 
-	system.debug(false); // you can change this to debug Durandal and DurandalEnvironment to see what happens there
+//	system.debug(false); // you can change this to debug Durandal and DurandalEnvironment to see what happens there
 	
 	describe('HOW TO USE', function(){
 

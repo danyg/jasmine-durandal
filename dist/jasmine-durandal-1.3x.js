@@ -24,7 +24,7 @@ SOFTWARE.
 
 (function(){
 
-	// ** @file E:\DevelKepler\durandal-jasmine\src\DurandalEnvironment.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/DurandalEnvironment.js
 	/*
 	 *
 	 *  @overview
@@ -133,6 +133,7 @@ SOFTWARE.
 	
 	//		system.debug(true);
 			this._stub(system, 'error', function(log){
+				me._log('ERROR', 'GENERAL ERROR', log);
 				me.trigger('ERROR', log.message);
 			});
 			this._spyModule().done(function(){
@@ -151,8 +152,11 @@ SOFTWARE.
 					errSub.off();
 				});
 	
-				me._createRootElement();
-				me._startApp();
+				me._createRootElement()
+					.done(function(){
+						me._startApp();
+					})
+				;
 			}).fail(function(){
 				defer.reject('DurandalEnvironment: Error acquiring the module: ' + me._moduleId);
 			});
@@ -215,6 +219,7 @@ SOFTWARE.
 				for(i = 0; i < this._toRestore.length; i++){
 					this._toRestore[i].restore();
 				}
+				this._toRestore = [];
 			}
 		};
 	
@@ -304,8 +309,21 @@ SOFTWARE.
 		};
 	
 		DurandalEnvironment.prototype._createRootElement = function(){
+			var defer = system.defer();
+	
 			if(!this._container || !this._container.parentNode){
-				
+	
+				this.__createRootElement(defer);
+	
+			}else{
+				defer.resolve();
+			}
+	
+			return defer.promise();
+		};
+	
+		DurandalEnvironment.prototype.__createRootElement = function(defer){
+			if($('.DURANDAL_ENVIRONMENT_CONTAINER').length === 0){
 				this._moduleIdElement = document.createElement('div');
 				this._moduleIdElement.id = this._id;
 	
@@ -313,7 +331,7 @@ SOFTWARE.
 				this._moduleIdElement.style.height = '1080px';
 	
 				this._container = document.createElement('div');
-				this._container.className = 'DurandalEnvironment';
+				this._container.className = 'DurandalEnvironment DURANDAL_ENVIRONMENT_CONTAINER';
 				this._container.style.position = 'absolute';
 	
 				if(system.debug()){
@@ -335,6 +353,13 @@ SOFTWARE.
 	
 				document.body.appendChild(this._container);
 				this._container.appendChild(this._moduleIdElement);
+	
+				defer.resolve();
+			} else {
+				var me = this;
+				setTimeout(function(){
+					me.__createRootElement(defer);
+				}, 100);
 			}
 		};
 	
@@ -362,7 +387,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\SpyStub.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/SpyStub.js
 	/**
 	 *
 	 *  @overview
@@ -428,7 +453,7 @@ SOFTWARE.
 		return SpyStub;
 	});
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\WidgetEnvironment.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/WidgetEnvironment.js
 	/**
 	 *
 	 *  @overview
@@ -438,17 +463,18 @@ SOFTWARE.
 	define('/__jasmine-durandal__/WidgetEnvironment', [
 		'/__jasmine-durandal__/DurandalEnvironment',
 		'/__jasmine-durandal__/viewEngineNotifier',
+		'/__jasmine-durandal__/SpyStub',
+		'/__jasmine-durandal__/_log',
 		'durandal/events',
 		'durandal/system',
 		'plugins/widget',
 		'jquery',
 		'/__jasmine-durandal__/widgetLoader'
-	], function(DurandalEnvironment, viewEngineNotifier, Events, system, widget, $){
+	], function(DurandalEnvironment, viewEngineNotifier, SpyStub, _log, Events, system, widget, $){
 	
 		'use strict';
 		
 		function WidgetEnvironment(widgetId){
-	
 			this._widgetId = widgetId;
 			this._widgetModuleId = widget.mapKindToModuleId(widgetId);
 			this._widgetViewId = widget.mapKindToViewId(widgetId);
@@ -458,9 +484,23 @@ SOFTWARE.
 			this._denv.configurePlugins({
 				widget: true
 			});
+			this._toRestore = [];
 	
-			this._denv.on('ERROR').then(this.proxy('ERROR'));
+			this._log('INFO', 'WidgetEnvironment creating');
+	
+			var me = this,
+				l = function(e){
+					me._log('ERROR', 'WidgetEnvironment ERROR', e);
+				}
+			;
+	
+			this._denv.on('ERROR')
+				.then(l)
+				.then(this.proxy('ERROR'))
+			;
+	
 			viewEngineNotifier.on('missingView_' + this._widgetViewId)
+				.then(l)
 				.then(this.proxy('ERROR'))
 			;
 	
@@ -477,6 +517,7 @@ SOFTWARE.
 		};
 		
 		WidgetEnvironment.prototype.newInstance = function(settings){
+			this._log('INFO', 'WidgetEnvironment newInstance ' + this._widgetId);
 			var me = this;
 			if(settings === undefined){
 				throw new TypeError('You should send an object settings to ' + this.constructor.name + '.newInstance');
@@ -502,8 +543,10 @@ SOFTWARE.
 		};
 		
 		WidgetEnvironment.prototype.destroy = function(){
+			this.destroyWidget();
 			return this._denv.destroy();
 		};
+	
 		WidgetEnvironment.prototype.destroyWidget = function(){
 			if(!!this._errSubscription){
 				this._errSubscription.off();
@@ -511,7 +554,9 @@ SOFTWARE.
 			if(this._newInstanceSubscription){
 				this._newInstanceSubscription.off();
 			}
-			this._widgetLoader.setSettings(false);
+			if(!!this._widgetLoader){
+				this._widgetLoader.removeWidget();
+			}
 		};
 		
 		WidgetEnvironment.prototype._newInstance = function(defer){
@@ -520,11 +565,19 @@ SOFTWARE.
 				this._errSubscription.off();
 			}
 			this._errSubscription = this.on('ERROR', function(err){
+				me._log('DEBUG', 'Deferred Reject because a error', err);
 				defer.reject(err);
 			});
 			defer.fail(function(){
 				me.destroy();
 			});
+	
+			this._stub(system, 'error', function(log){
+				window.console.error(log);
+				me._log('ERROR', 'DURANDAL ERROR', log);
+				me.trigger('ERROR', log);
+			});
+	
 			
 			if(!this._denv.isInit()){
 				this._denv.init()
@@ -537,6 +590,23 @@ SOFTWARE.
 				;
 			}else{
 				this._startWidget(defer);
+			}
+		};
+	
+	
+		WidgetEnvironment.prototype._stub = function(parent, method, code){
+			var stub = new SpyStub(parent, method);
+			stub.stub(code);
+			this._toRestore.push(stub);
+		};
+	
+		WidgetEnvironment.prototype._restoreStubSpy = function(){
+			if(this._toRestore.length > 0){
+				var i;
+				for(i = 0; i < this._toRestore.length; i++){
+					this._toRestore[i].restore();
+				}
+				this._toRestore = [];
 			}
 		};
 		
@@ -553,6 +623,7 @@ SOFTWARE.
 					me._widget = widget;
 					me._layer = child;
 					me._newInstanceSubscription.off();
+					me._restoreStubSpy();
 					defer.resolve(widget);
 				})
 			;
@@ -561,11 +632,18 @@ SOFTWARE.
 			this._listenWidgetLoader(defer);
 			this._widgetLoader.setSettings(this._settings, this._myId);
 		};
+	
+		WidgetEnvironment.prototype._log = function(){
+			var args = Array.prototype.splice.call(arguments, 0);
+			args.push('[' + this._widgetId + ' with elementId: ' + this._denv._id + ']');
+			_log.apply(null, args);
+		};
 		
 		return WidgetEnvironment;
 	});
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\_log.js
+	
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/_log.js
 	/* 
 	 * 
 	 *  @overview 
@@ -617,7 +695,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\viewEngineNotifier.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/viewEngineNotifier.js
 	/*
 	 *
 	 *  @overview
@@ -659,7 +737,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\widgetLoader.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/widgetLoader.js
 	/* 
 	 * 
 	 *  @overview 
@@ -674,6 +752,10 @@ SOFTWARE.
 			var widgetLoader = {
 				_widgetSettings: ko.observable(),
 				_widgetInstance: null,
+	
+				removeWidget: function(){
+					this._widgetSettings(null);
+				},
 	
 				setSettings: function(settings, id){
 					var me = this;
@@ -723,7 +805,7 @@ SOFTWARE.
 	}());
 	
 	
-	// ** @file E:\DevelKepler\durandal-jasmine\src\jasmine-durandal-1.3x.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/jasmine-durandal-1.3x.js
 	/*
 	 *
 	 *  @overview
@@ -858,19 +940,29 @@ SOFTWARE.
 	
 		window.wit = function(desc, settings, itDefinition) {
 			return jasmine.getEnv().it(desc, function(){
-				var suite = findSuiteWithDurandal(this);
+				var suite = findSuiteWithDurandal(this),
+					spec = this
+				;
 	
 				this.after(function(){
 					suite.durandal.destroyWidget();
 				});
 	
+				var started = false;
+				spec.waitsFor(function(){
+					return started;
+				}, 15000, 'Widget Initialization Timeout');
+	
 				suite.durandal.newInstance(settings)
 					.done(function(){
+						started = true;
 						itDefinition.call(this, suite.durandal.getCurrentInstance());
 					})
-					.fail(function(){
+					.fail(function(e){
+						started = true;
+						spec.fail(e);
 						//@todo do something
-				});
+					});
 			});
 		};
 	

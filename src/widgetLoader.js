@@ -13,6 +13,10 @@
 			_widgetSettings: ko.observable(),
 			_widgetInstance: null,
 
+			removeWidget: function(){
+				this._widgetSettings(null);
+			},
+
 			setSettings: function(settings, id){
 				var me = this;
 				var myAttached = function(child, parent, context){

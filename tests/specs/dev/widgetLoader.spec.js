@@ -20,6 +20,8 @@ define([
 		it('Has an API', function(){
 			var module = require('widgetLoader');
 			expect(typeof module.setSettings).toBe('function');
+			expect(typeof module.removeWidget).toBe('function');
+
 			
 			// inherited from Event;
 			expect(typeof module.on).toBe('function');
