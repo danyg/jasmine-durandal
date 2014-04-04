@@ -79,7 +79,7 @@ define([
 	};
 	
 	WidgetEnvironment.prototype.$ = function(selector){
-		return $(selector, this._layer);
+		return $(selector, this._layer()); //the layer can changes because of that is a fnc
 	};
 	
 	WidgetEnvironment.prototype.getCurrentInstance = function(){
@@ -173,9 +173,9 @@ define([
 		}
 
 		this._newInstanceSubscription = this._widgetLoader.on('newInstance_' + this._myId)
-			.then(function(widget, child){
+			.then(function(widget, childFnc){
 				me._widget = widget;
-				me._layer = child;
+				me._layer = childFnc;
 				me._newInstanceSubscription.off();
 				me._restoreStubSpy();
 				defer.resolve(widget);

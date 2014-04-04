@@ -21,7 +21,7 @@
 				var me = this;
 				var myAttached = function(child, parent, context){
 					me._widgetInstance = context.model;
-					me.trigger('newInstance_' + id, context.model, child);
+					me.trigger('newInstance_' + id, context.model, function(){ return context.child; });
 				};
 				if(!!settings.attached){
 					var oldAttached = settings.attached;

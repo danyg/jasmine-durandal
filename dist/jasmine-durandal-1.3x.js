@@ -535,7 +535,7 @@ SOFTWARE.
 		};
 		
 		WidgetEnvironment.prototype.$ = function(selector){
-			return $(selector, this._layer);
+			return $(selector, this._layer()); //the layer can changes because of that is a fnc
 		};
 		
 		WidgetEnvironment.prototype.getCurrentInstance = function(){
@@ -629,9 +629,9 @@ SOFTWARE.
 			}
 	
 			this._newInstanceSubscription = this._widgetLoader.on('newInstance_' + this._myId)
-				.then(function(widget, child){
+				.then(function(widget, childFnc){
 					me._widget = widget;
-					me._layer = child;
+					me._layer = childFnc;
 					me._newInstanceSubscription.off();
 					me._restoreStubSpy();
 					defer.resolve(widget);
@@ -771,7 +771,7 @@ SOFTWARE.
 					var me = this;
 					var myAttached = function(child, parent, context){
 						me._widgetInstance = context.model;
-						me.trigger('newInstance_' + id, context.model, child);
+						me.trigger('newInstance_' + id, context.model, function(){ return context.child; });
 					};
 					if(!!settings.attached){
 						var oldAttached = settings.attached;
