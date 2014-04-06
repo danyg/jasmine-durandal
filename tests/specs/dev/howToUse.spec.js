@@ -5,13 +5,15 @@
  *
  */
 define([
-	'src/DurandalEnvironment',
+	'knockout',
 	'durandal/system',
 	'durandal/viewLocator',
 	'plugins/http',
+	
+	'widgets/interactive/viewmodel',
 
 	'src/jasmine-durandal-1.3x'
-], function(DurandalEnvironment, system, viewLocator, http){
+], function(ko, system, viewLocator, http, Interactive){
 
 	'use strict';
 
@@ -94,6 +96,93 @@ define([
 				expect(durandal.$('.thumbnails li:nth-child(3) img').attr('src')).toBe(module.images()[2].media.m);
 			});
 
+		});
+
+		describeWidget('ColorItem widget', 'colorItem', function(){
+
+			var durandal = this.durandal,
+				settingsRed = {
+					title: 'hello red world',
+					color: 'rgb(255, 0, 0)'
+				},
+				settingsBlue = {
+					title: 'hello blue world',
+					color: 'rgb(0, 0, 255)'
+				}
+			;
+			
+			wit('red color', settingsRed, function(testee){
+				// check instance properties
+				expect(testee.title).toBe(settingsRed.title);
+				expect(testee.color).toBe(settingsRed.color);
+				
+				// check view bindings
+				expect(durandal.$('[data-testid="title"]').text()).toBe(settingsRed.title);
+				expect(durandal.$('[data-testid="color"]').css('backgroundColor')).toBe(settingsRed.color);
+			});
+
+			wit('blue color', settingsBlue, function(testee){
+				// check instance properties
+				expect(testee.title).toBe(settingsBlue.title);
+				expect(testee.color).toBe(settingsBlue.color);
+				
+				// check view bindings
+				expect(durandal.$('[data-testid="title"]').text()).toBe(settingsBlue.title);
+				expect(durandal.$('[data-testid="color"]').css('backgroundColor')).toBe(settingsBlue.color);
+			});
+			
+		});
+		
+		describeWidget('Interactive Widget', 'interactive', function(){
+			var durandal = this.durandal,
+				settingsO = {
+					name: ko.observable()
+				}
+			;
+			
+			beforeEach(function(){
+				sinon.spy(Interactive.prototype, '_toggleThing');
+			});
+			
+			afterEach(function(){
+				Interactive.prototype._toggleThing.restore();
+			});
+			
+			wit('Static Name', {name: 'the Thing'}, function(testee){
+				expect(testee._name).toEqual('the Thing');
+				expect(testee._thingVisible()).toBe(true);
+				
+				expect(durandal.$('[data-testid="nameText"]').text()).toBe(testee._name);
+				
+				// test button behavior
+				expect(testee._toggleThing.called).toBe(false);
+				
+				durandal.$('[data-testid="toggleButton"]').click();
+				
+				expect(testee._toggleThing.called).toBe(true);
+				expect(testee._thingVisible()).toBe(false);
+				
+				durandal.$('[data-testid="toggleButton"]').click();
+				expect(testee._thingVisible()).toBe(true);
+				
+			});
+			
+			wit('Observable Name', settingsO, function(testee){
+				expect(testee._name).toBe(settingsO.name);
+				expect(testee._thingVisible()).toBe(true);
+				
+				
+				settingsO.name('follow me');
+				expect(durandal.$('[data-testid="nameText"]').text()).toBe('follow me');
+				
+				settingsO.name('on github');
+				expect(durandal.$('[data-testid="nameText"]').text()).toBe('on github');
+				
+				settingsO.name('https://www.github.com/danyg');
+				expect(durandal.$('[data-testid="nameText"]').text()).toBe('https://www.github.com/danyg');
+				
+			});
+			
 		});
 
 	});

@@ -1,0 +1,7 @@
+<div>
+	<button data-bind="click: $this._toggleThing" data-testid='toggleButton'>Toggle thing</button>
+	
+	<div class="thing" data-bind="visible: $this._thingVisible()" data-testid="thing">
+		Hello I'm a <span data-bind="text: $this._name" data-testid='nameText'></span>
+	</div>
+</div>

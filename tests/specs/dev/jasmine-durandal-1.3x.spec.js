@@ -155,7 +155,6 @@ define([
 
 					expect(testee.color).toBe('red');
 					expect(testee.title).toBe('hello');
-	//				expect(durandal.$('[data-testid="color"]')[0].style.background).toBe('red');
 					expect(durandal.$('[data-testid="title"]')).toHaveHtml('hello');
 				}
 			);
@@ -173,7 +172,6 @@ define([
 
 					expect(testee.color).toBe(settings.color);
 					expect(testee.title).toBe(settings.title);
-	//				expect(durandal.$('[data-testid="color"]')[0].style.background).toBe('rgb(238, 130, 238)');
 					expect(durandal.$('[data-testid="title"]')).toHaveHtml(settings.title);
 				});
 
@@ -190,7 +188,6 @@ define([
 
 						expect(testee.color).toBe(settings.color);
 						expect(testee.title).toBe(settings.title);
-	//					expect(durandal.$('[data-testid="color"]')).toHaveCss({backgroundColor: settings.color});
 						expect(durandal.$('[data-testid="title"]')).toHaveHtml(settings.title);
 					});
 
@@ -207,7 +204,6 @@ define([
 
 							expect(testee.color).toBe(settings.color);
 							expect(testee.title).toBe(settings.title);
-	//						expect(durandal.$('[data-testid="color"]')).toHaveCss({backgroundColor: settings.color});
 							expect(durandal.$('[data-testid="title"]')).toHaveHtml(settings.title);
 						});
 					});
@@ -230,7 +226,6 @@ define([
 
 						expect(testee.color).toBe(settings.color);
 						expect(testee.title).toBe(settings.title);
-	//					expect(durandal.$('[data-testid="color"]')).toHaveCss({backgroundColor: settings.color});
 						expect(durandal.$('[data-testid="title"]')).toHaveHtml(settings.title);
 						lastTestee = testee;
 					});
@@ -243,30 +238,6 @@ define([
 			});
 
 		});
-/*
-		describe('WidgetEnvironment integrated with jasmine through describeWidget', 'missingview', function(){
-			wit('Checking mixups', {color: 'red',title: 'hello'}, function(inst){
-				expected(inst).toBe(defined);
-			});
-		});
 
-		describeWidget('WidgetEnvironment integrated with jasmine through describeWidget', 'good', function(){
-			wit('Checking mixups', {color: 'red',title: 'hello'}, function(inst){
-				expected(inst).toBe(defined);
-			});
-		});
-
-		describeWidget('WidgetEnvironment integrated with jasmine through describeWidget', 'missingview', function(){
-			wit('Checking mixups', {color: 'red',title: 'hello'}, function(inst){
-				expected(inst).toBe(defined);
-			});
-		});
-
-		describeWidget('WidgetEnvironment integrated with jasmine through describeWidget', 'good', function(){
-			wit('Checking mixups', {color: 'red',title: 'hello'}, function(inst){
-				expected(inst).toBe(defined);
-			});
-		});
-*/
 	});
 });
