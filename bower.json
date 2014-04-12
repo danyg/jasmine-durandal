@@ -1,7 +1,7 @@
 {
   "name": "durandal-jasmine",
   "version": "0.0.1",
-  "dependencies": {
+  "devDependencies": {
     "bootstrap": "~3.0.0",
     "durandal": "2.0.1",
     "jquery": ">=1.9.0",
@@ -12,5 +12,26 @@
 	"jasmine": "1.3.1",
 	"jasmine-jquery": "1.7.0"
   },
-  "private": true
+  "homepage": "https://github.com/danyg/jasmine-durandal",
+  "authors": [
+    "danyg <dalgo86@gmail.com>"
+  ],
+  "description": "A jasmine tool to test durandal modules and widgets, in unitary way",
+  "main": "dist/jasmine-durandal-1.3x.js",
+  "keywords": [
+    "jasmine",
+    "durandal",
+    "jasmine-durandal",
+    "unit",
+    "test"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "libs/",
+    "test",
+    "tests"
+  ]
 }
