@@ -243,7 +243,8 @@ define([
 				
 				runs(function(){
 					expect(error).not.toBe(false);
-					expect(error.toString().indexOf('Failed to load composed module')).not.toBe(-1);
+					expect(error.toString()).toBeDefined();
+					expect(error.toString().indexOf('View Not Found')).not.toBe(-1, error.toString());
 					expect(denv.destroy.called).toBe(true);
 					expect($('body >.DurandalEnvironment')).not.toBeInDOM();
 
