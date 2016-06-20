@@ -24,7 +24,7 @@ SOFTWARE.
 
 (function(){
 
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/DurandalEnvironment.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/DurandalEnvironment.js
 	/*
 	 *
 	 *  @overview
@@ -387,7 +387,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/SpyStub.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/SpyStub.js
 	/**
 	 *
 	 *  @overview
@@ -453,7 +453,7 @@ SOFTWARE.
 		return SpyStub;
 	});
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/WidgetEnvironment.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/WidgetEnvironment.js
 	/**
 	 *
 	 *  @overview
@@ -653,7 +653,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/_log.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/_log.js
 	/* 
 	 * 
 	 *  @overview 
@@ -705,7 +705,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/viewEngineNotifier.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/viewEngineNotifier.js
 	/*
 	 *
 	 *  @overview
@@ -747,7 +747,7 @@ SOFTWARE.
 	});
 	
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/widgetLoader.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/widgetLoader.js
 	/* 
 	 * 
 	 *  @overview 
@@ -815,7 +815,7 @@ SOFTWARE.
 	}());
 	
 	
-	// ** @file /home/daniel/workspaces/trunk/jasmine-durandal/src/jasmine-durandal-1.3x.js
+	// ** @file /scrumdata/workspaces/tests/jasmine-durandal/src/jasmine-durandal-1.3x.js
 	/*
 	 *
 	 *  @overview
@@ -966,7 +966,11 @@ SOFTWARE.
 				suite.durandal.newInstance(settings)
 					.done(function(){
 						started = true;
-						itDefinition.call(this, suite.durandal.getCurrentInstance());
+						try {
+							itDefinition.call(this, suite.durandal.getCurrentInstance());
+						} catch(e) {
+							spec.fail(e);
+						}
 					})
 					.fail(function(e){
 						started = true;

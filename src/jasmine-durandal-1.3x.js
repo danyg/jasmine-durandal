@@ -148,7 +148,11 @@ define([
 			suite.durandal.newInstance(settings)
 				.done(function(){
 					started = true;
-					itDefinition.call(this, suite.durandal.getCurrentInstance());
+					try {
+						itDefinition.call(this, suite.durandal.getCurrentInstance());
+					} catch(e) {
+						spec.fail(e);
+					}
 				})
 				.fail(function(e){
 					started = true;
